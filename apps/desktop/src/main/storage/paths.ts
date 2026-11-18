@@ -9,14 +9,14 @@ export const PATHS = {
     config: path.join(ROOT_DIR, 'config.json'),
     mcp: path.join(ROOT_DIR, 'mcp.json'),
 
-    // Chat
+    // 聊天
     chatDir: (sessionId: string) => path.join(ROOT_DIR, 'chat', sessionId),
     chatContext: (sessionId: string, agentId: string) =>
         path.join(ROOT_DIR, 'chat', sessionId, agentId, 'context.jsonl'),
     chatTelemetry: (sessionId: string) =>
         path.join(ROOT_DIR, 'chat', sessionId, 'telemetry', 'traces.json'),
 
-    // Schedule
+    // 定时任务
     scheduleDir: (eventId: string) => path.join(ROOT_DIR, 'schedule', eventId),
     scheduleEvent: (eventId: string) => path.join(ROOT_DIR, 'schedule', eventId, 'event.json'),
     scheduleSession: (eventId: string, timestamp: string) =>
@@ -24,7 +24,7 @@ export const PATHS = {
     scheduleTelemetry: (eventId: string, timestamp: string) =>
         path.join(ROOT_DIR, 'schedule', eventId, 'telemetry', `${timestamp}.traces.json`),
 
-    // Editor
+    // 编辑器
     editorDir: (docId: string) => path.join(ROOT_DIR, 'editor', docId),
     editorContent: (docId: string) => path.join(ROOT_DIR, 'editor', docId, 'content.md'),
     editorSessionDir: (docId: string) => path.join(ROOT_DIR, 'editor', docId),
@@ -33,18 +33,18 @@ export const PATHS = {
     editorTelemetry: (docId: string, timestamp: string) =>
         path.join(ROOT_DIR, 'editor', docId, 'telemetry', `${timestamp}.traces.json`),
 
-    // Skills
+    // 技能
     skills: path.join(ROOT_DIR, 'skills'),
     skillDir: (skillName: string) => path.join(ROOT_DIR, 'skills', skillName),
     skillWatchDirs: path.join(ROOT_DIR, 'skills', 'watch-dirs.json'),
     skillStates: path.join(ROOT_DIR, 'skills', 'states.json'),
 
-    // Workspace
+    // 工作区
     workspace: path.join(ROOT_DIR, 'workspace'),
 
     offloadDir: (sessionId: string) => path.join(ROOT_DIR, 'offload', sessionId),
 
-    // Telemetry
+    // 遥测
     telemetry: path.join(ROOT_DIR, 'telemetry'),
     telemetryUsage: path.join(ROOT_DIR, 'telemetry', 'usage.json'),
     telemetryDaily: (date: string) => path.join(ROOT_DIR, 'telemetry', 'daily', `${date}.json`),

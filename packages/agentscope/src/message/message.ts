@@ -15,39 +15,39 @@ import { _generateId, _generateTimestamp, base64ToBytes, bytesToBase64 } from '.
 import { EventType, ReplyFinishedReason } from '../event';
 import type { AgentEvent, ErrorInfo } from '../event';
 
-/** A chat message exchanged between agents or between an agent and a model. */
+/** 在 Agent 之间或 Agent 与模型之间交换的聊天消息。 */
 export interface Msg {
-    /** Unique identifier for the message. */
+    /** 消息的唯一标识符。 */
     id: string;
-    /** Display name of the message sender. */
+    /** 消息发送者的显示名称。 */
     name: string;
-    /** Conversation role of the sender. */
+    /** 发送者的对话角色。 */
     role: 'user' | 'assistant' | 'system';
-    /** Message body. */
+    /** 消息正文。 */
     content: ContentBlock[];
-    /** Arbitrary key-value metadata attached to the message. */
+    /** 附加到消息上的任意键值元数据。 */
     metadata: Record<string, JSONSerializableObject>;
-    /** ISO-8601 creation timestamp. */
+    /** ISO-8601 创建时间戳。 */
     created_at: string;
-    /** ISO-8601 finished timestamp. */
+    /** ISO-8601 结束时间戳。 */
     finished_at: string | null;
     /**
-     * Terminal reason of this reply (error / interrupted / exceed_max_iters).
-     * Undefined/null until a REPLY_END event is applied.
+     * 本次回复的终止原因（error / interrupted / exceed_max_iters）。
+     * 在应用 REPLY_END 事件之前为 undefined/null。
      */
     finished_reason: ReplyFinishedReason | null;
-    /** Structured response payload, when requested and successfully generated. */
+    /** 请求并成功生成时的结构化响应负载。 */
     structured_output: Record<string, JSONSerializableObject> | null;
     /**
-     * Structured error info, populated only when
-     * `finished_reason === ReplyFinishedReason.ERROR`.
+     * 结构化错误信息，仅在
+     * `finished_reason === ReplyFinishedReason.ERROR` 时填充。
      */
     error: ErrorInfo | null;
-    /** Usage information for the message, such as token counts. */
+    /** 消息的用量信息，例如 token 计数。 */
     usage: Usage | null;
 }
 
-/** Token usage stored on a message. */
+/** 存储在消息上的 token 用量。 */
 export interface Usage {
     input_tokens: number;
     output_tokens: number;
@@ -58,9 +58,9 @@ export interface Usage {
 type UsageInput = Pick<Usage, 'input_tokens' | 'output_tokens'> & Partial<Usage>;
 
 /**
- * Normalize optional cache-token counters in usage input.
+ * 规范化 usage 输入中可选的缓存 token 计数。
  * @param usage
- * @returns Normalized usage, or `null` when absent.
+ * @returns 规范化后的 usage；若缺失则返回 `null`。
  */
 function normalizeUsage(usage: UsageInput | null | undefined): Usage | null {
     if (usage == null) return null;
@@ -73,8 +73,8 @@ function normalizeUsage(usage: UsageInput | null | undefined): Usage | null {
 }
 
 /**
- * Create a new {@link Msg} object, filling in `id` and `created_at` when omitted.
- * A plain string `content` is automatically wrapped in a single {@link TextBlock}.
+ * 创建新的 {@link Msg} 对象，在省略时自动填充 `id` 和 `created_at`。
+ * 纯字符串 `content` 会自动包装为单个 {@link TextBlock}。
  * @param root0
  * @param root0.name
  * @param root0.content
@@ -84,14 +84,14 @@ function normalizeUsage(usage: UsageInput | null | undefined): Usage | null {
  * @param root0.created_at
  * @param root0.finished_at
  * @param root0.usage
- * @returns A Msg object.
+ * @returns 一个 Msg 对象。
  */
 /**
- * Validate that content blocks are allowed for the given role.
+ * 校验内容块是否允许用于给定角色。
  *
- * Mirrors the Python `_assert_user_content_blocks` / `_assert_system_content_blocks`
- * guards: user messages may only contain text or data blocks; system messages
- * may only contain text blocks; assistant messages accept any block type.
+ * 与 Python 的 `_assert_user_content_blocks` / `_assert_system_content_blocks`
+ * 守卫一致：用户消息只能包含文本或数据块；系统消息
+ * 只能包含文本块；助手消息接受任意块类型。
  * @param role
  * @param content
  */
@@ -112,7 +112,7 @@ function assertContentBlocksForRole(role: Msg['role'], content: ContentBlock[]):
 }
 
 /**
- * createMsg is a low-level utility for constructing Msg objects with proper defaults and validation.
+ * createMsg 是用于构造 Msg 对象的底层工具，负责填充合理默认值并执行校验。
  * @param root0
  * @param root0.name
  * @param root0.content
@@ -125,7 +125,7 @@ function assertContentBlocksForRole(role: Msg['role'], content: ContentBlock[]):
  * @param root0.finished_reason
  * @param root0.structured_output
  * @param root0.error
- * @returns A Msg object with the specified properties, and defaults for any omitted fields.
+ * @returns 具有指定属性的 Msg 对象，省略的字段使用默认值。
  */
 export function createMsg({
     name,
@@ -171,7 +171,7 @@ export function createMsg({
 }
 
 /**
- * Create a user {@link Msg}.
+ * 创建用户 {@link Msg}。
  * @param root0
  * @param root0.name
  * @param root0.content
@@ -180,7 +180,7 @@ export function createMsg({
  * @param root0.created_at
  * @param root0.finished_at
  * @param root0.finished_reason
- * @returns A Msg object with role 'user'.
+ * @returns 角色为 'user' 的 Msg 对象。
  */
 export function UserMsg({
     name,
@@ -213,7 +213,7 @@ export function UserMsg({
 }
 
 /**
- * Create an assistant {@link Msg}.
+ * 创建助手 {@link Msg}。
  * @param root0
  * @param root0.name
  * @param root0.content
@@ -224,7 +224,7 @@ export function UserMsg({
  * @param root0.finished_at
  * @param root0.finished_reason
  * @param root0.structured_output
- * @returns A Msg object with role 'assistant'.
+ * @returns 角色为 'assistant' 的 Msg 对象。
  */
 export function AssistantMsg({
     name,
@@ -262,7 +262,7 @@ export function AssistantMsg({
 }
 
 /**
- * Create a system {@link Msg}.
+ * 创建系统 {@link Msg}。
  * @param root0
  * @param root0.name
  * @param root0.content
@@ -271,7 +271,7 @@ export function AssistantMsg({
  * @param root0.created_at
  * @param root0.finished_at
  * @param root0.finished_reason
- * @returns A Msg object with role 'system'.
+ * @returns 角色为 'system' 的 Msg 对象。
  */
 export function SystemMsg({
     name,
@@ -304,14 +304,14 @@ export function SystemMsg({
 }
 
 /**
- * Extract the plain-text content from a message.
+ * 从消息中提取纯文本内容。
  *
- * When `content` is a string it is returned as-is. When it is an array of
- * content blocks, all {@link TextBlock} texts are joined with `separator`.
+ * 当 `content` 为字符串时原样返回。当其为内容块数组时，
+ * 所有 {@link TextBlock} 的文本会用 `separator` 连接。
  *
- * @param msg - The message to read.
- * @param separator - String inserted between consecutive text blocks. Defaults to `'\n'`.
- * @returns The concatenated text, or `null` when no text blocks are present.
+ * @param msg - 要读取的消息。
+ * @param separator - 插入相邻文本块之间的字符串。默认为 `'\n'`。
+ * @returns 拼接后的文本；若不存在文本块则返回 `null`。
  */
 export function getTextContent(msg: Msg, separator: string = '\n'): string | null {
     const textBlocks = msg.content.filter(block => block.type === 'text');
@@ -320,10 +320,10 @@ export function getTextContent(msg: Msg, separator: string = '\n'): string | nul
 }
 
 /**
- * Check whether a message contains any block of the requested type.
+ * 检查消息是否包含所请求类型的内容块。
  * @param msg
  * @param blockType
- * @returns Whether a matching block exists.
+ * @returns 是否存在匹配的块。
  */
 export function hasContentBlocks(
     msg: Msg,
@@ -335,12 +335,12 @@ export function hasContentBlocks(
 }
 
 /**
- * Return all content blocks from a message, regardless of type.
+ * 返回消息中的所有内容块，不区分类型。
  *
- * When `content` is a plain string it is wrapped in a single {@link TextBlock}.
+ * 当 `content` 为纯字符串时会被包装为单个 {@link TextBlock}。
  *
- * @param msg - The message to read.
- * @returns An array of all {@link ContentBlock} objects.
+ * @param msg - 要读取的消息。
+ * @returns 包含所有 {@link ContentBlock} 对象的数组。
  */
 export function getContentBlocks(msg: Msg): ContentBlock[];
 export function getContentBlocks(msg: Msg, blockType: 'text'): TextBlock[];
@@ -360,24 +360,24 @@ export function getContentBlocks(
 }
 
 /**
- * Find a content block by type and id within a message.
+ * 在消息中按类型和 id 查找内容块。
  * @param msg
  * @param blockType
  * @param blockId
- * @returns The matching {@link ContentBlock}, or `undefined` if not found.
+ * @returns 匹配的 {@link ContentBlock}；若未找到则返回 `undefined`。
  */
 function findBlock(msg: Msg, blockType: string, blockId: string): ContentBlock | undefined {
     return msg.content.find(block => block.type === blockType && block.id === blockId);
 }
 
 /**
- * Apply a streaming {@link AgentEvent} to a {@link Msg}, mutating it in place.
+ * 把流式 {@link AgentEvent} 应用到 {@link Msg}，并就地修改它。
  *
- * Only `content` and `finished_at` are ever modified. Events whose
- * `reply_id` does not match `msg.id` are skipped with a warning.
+ * 只会修改 `content` 和 `finished_at`。`reply_id` 与
+ * `msg.id` 不匹配的事件会被跳过并给出警告。
  * @param msg
  * @param event
- * @returns The mutated {@link Msg} object.
+ * @returns 修改后的 {@link Msg} 对象。
  */
 export function appendEvent(msg: Msg, event: AgentEvent): Msg {
     if (!('reply_id' in event)) return msg;
@@ -444,8 +444,8 @@ export function appendEvent(msg: Msg, event: AgentEvent): Msg {
         }
 
         case EventType.HINT_BLOCK: {
-            // Hint blocks are not streamed — the full content arrives in
-            // a single event and is appended as a complete HintBlock.
+            // 提示块不是流式的——完整内容在单个事件中到达，
+            // 并作为完整的 HintBlock 追加。
             const hintBlock = HintBlock({
                 id: event.block_id,
                 hint: event.hint,
@@ -470,10 +470,10 @@ export function appendEvent(msg: Msg, event: AgentEvent): Msg {
             if (!block) {
                 console.warn(`DataBlock "${event.block_id}" not found, skipping.`);
             } else if (event.data) {
-                // Each delta is an independently base64-encoded chunk (with
-                // its own padding); naive string concat would inject '=' into
-                // the middle of the byte stream and corrupt it. Decode, concat
-                // bytes, re-encode.
+                // 每个 delta 都是独立 base64 编码的分片（各自带有
+                // 填充）；直接做字符串拼接会把 '=' 注入到字节流的
+                // 中间并破坏数据。因此先解码、
+                // 拼接字节，再重新编码。
                 const src = (block as DataBlock).source as Base64Source;
                 const existing = src.data ? base64ToBytes(src.data) : new Uint8Array(0);
                 const incoming = base64ToBytes(event.data);
@@ -581,8 +581,8 @@ export function appendEvent(msg: Msg, event: AgentEvent): Msg {
                 (block as ToolResultBlock).metadata = event.metadata ?? {};
                 (block as ToolResultBlock).finished_at = event.created_at;
             }
-            // The paired ToolCallBlock's lifecycle ends with its
-            // result — flip it to 'finished'
+            // 配对的 ToolCallBlock 生命周期随其结果结束
+            // ——把它置为 'finished'
             const callBlock = findBlock(msg, 'tool_call', event.tool_call_id);
             if (callBlock) {
                 (callBlock as ToolCallBlock).state = 'finished';
@@ -591,7 +591,7 @@ export function appendEvent(msg: Msg, event: AgentEvent): Msg {
         }
 
         case EventType.MODEL_CALL_END:
-            // Accumulated the input and output tokens here.
+            // 在此累加输入和输出 token。
             if (msg.usage) {
                 msg.usage.input_tokens += event.input_tokens;
                 msg.usage.output_tokens += event.output_tokens;
@@ -620,9 +620,9 @@ export function appendEvent(msg: Msg, event: AgentEvent): Msg {
         case EventType.USER_CONFIRM_RESULT:
             for (const result of event.confirm_results) {
                 const b = findBlock(msg, 'tool_call', result.tool_call.id);
-                // Only 'asking' calls can transition; skip stale
-                // results (e.g. arriving after an interrupt already
-                // resolved the tool call to 'finished').
+                // 只有处于 'asking' 的调用才能转换；跳过过期
+                // 结果（例如在中断已将工具调用
+                // 解析为 'finished' 之后才到达的结果）。
                 if (b && (b as ToolCallBlock).state === 'asking') {
                     (b as ToolCallBlock).state = result.confirmed ? 'allowed' : 'finished';
                 }
@@ -637,11 +637,11 @@ export function appendEvent(msg: Msg, event: AgentEvent): Msg {
             break;
 
         case EventType.EXTERNAL_EXECUTION_RESULT: {
-            // Dedupe by existing tool_result id — skip results whose
-            // tool_call already has a persisted tool_result (e.g. a
-            // late arrival after an interrupt already injected a
-            // fake tool_result). Mirrors the Python backend's guard
-            // in ``agentscope.message._base.Msg.append_event``.
+            // 按已有 tool_result id 去重——跳过其 tool_call
+            // 已存在持久化 tool_result 的结果（例如在中断
+            // 已注入伪 tool_result 之后才迟到到达的结果）。
+            // 与 Python 后端在
+            // ``agentscope.message._base.Msg.append_event`` 中的守卫一致。
             const existingResultIds = new Set(
                 msg.content
                     .filter(b => b.type === 'tool_result')

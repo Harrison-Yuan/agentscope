@@ -18,24 +18,24 @@ interface RegisteredTool extends Tool {
 }
 
 /**
- * The toolkit module in AgentScope, which is responsible for registering tool functions, MCP, and agent skills.
- * It also provides group-wise management of tools.
+ * AgentScope 中的 toolkit 模块，负责注册工具函数、MCP 以及 agent 技能。
+ * 同时提供按分组管理工具的能力。
  */
 export class Toolkit {
     tools: RegisteredTool[];
     skills: string[];
     skillDirs: string[];
 
-    // The cache mapping from the skill name to its corresponding tool name in the toolkit.
+    // 从技能名到工具包中对应工具名的缓存映射。
     private _skillCache: { [name: string]: string };
 
     /**
-     * Initializes a new instance of the Toolkit class.
-     * @param config - The configuration object for initializing the toolkit, which can include an array of tools, an array of skill paths, an array of skill directory paths, and a boolean indicating whether to include the built-in skill tool for reading SKILL.md files.
-     * @param config.tools - An array of tool definitions to register in the toolkit.
-     * @param config.skills - An array of file paths pointing to individual skills.
-     * @param config.skillDirs - An array of directory paths, where each directory can contain multiple skills in its subdirectories.
-     * @param config.builtInSkillTool - A boolean flag indicating whether to include the built-in skill tool for reading SKILL.md files.
+     * 初始化 Toolkit 类的新实例。
+     * @param config - 用于初始化工具包的配置对象，可包含工具数组、技能路径数组、技能目录路径数组，以及一个布尔值，表示是否包含用于读取 SKILL.md 文件的内置技能工具。
+     * @param config.tools - 要注册到工具包中的工具定义数组。
+     * @param config.skills - 指向各个技能的文件路径数组。
+     * @param config.skillDirs - 目录路径数组，每个目录的子目录中可包含多个技能。
+     * @param config.builtInSkillTool - 布尔标志，表示是否包含用于读取 SKILL.md 文件的内置技能工具。
      */
     constructor(config?: {
         tools?: Tool[];
@@ -78,10 +78,10 @@ Usage:
     }
 
     /**
-     * Registers a tool function to the toolkit. The function can be either a plain function that adheres to the ToolFunction type, or an instance of a class that extends ToolBase. When registering a plain function, the name, description, and input schema must be provided explicitly. When registering a ToolBase instance, these properties will be extracted from the instance itself.
+     * 向工具包注册一个工具函数。该函数既可以是符合 ToolFunction 类型的普通函数，也可以是继承自 ToolBase 的类的实例。注册普通函数时，必须显式提供名称、描述和输入 schema；注册 ToolBase 实例时，这些属性将从实例本身中提取。
      *
-     * @params tool - The tool function to register, which can be either a plain function with explicit properties or an instance of a class that extends ToolBase.
-     * @returns The Toolkit instance with the new tool function registered
+     * @params tool - 要注册的工具函数，可以是带有显式属性的普通函数，也可以是继承自 ToolBase 的类的实例。
+     * @returns 已注册新工具函数的 Toolkit 实例
      * @param tool
      */
     registerToolFunction(tool: Tool): Toolkit {
@@ -93,14 +93,14 @@ Usage:
     }
 
     /**
-     * Registers functions from a given MCP client.
+     * 注册来自指定 MCP 客户端的函数。
      *
      * @param root0
      * @param root0.client
      * @param root0.enabledTools
      * @param root0.disabledTools
      * @param root0.requireUserConfirm
-     * @returns The Toolkit instance with the new tools registered
+     * @returns 已注册新工具的 Toolkit 实例
      */
     async registerMCPClient({
         client,
@@ -136,16 +136,16 @@ Usage:
     }
 
     /**
-     * Executes a registered tool function based on the provided ToolUseBlock.
-     * Note this method always returns an AsyncGenerator of ToolResponse, regardless of the tool function type.
+     * 根据传入的 ToolUseBlock 执行已注册的工具函数。
+     * 注意：无论工具函数是何种类型，该方法始终返回 ToolResponse 的 AsyncGenerator。
      *
-     * @param toolCall - The ToolUseBlock containing the tool name and input arguments
-     * @yields Incremental ToolResponse objects as they are produced by the tool function
-     * @returns The final complete ToolResponse after the tool function execution is finished
+     * @param toolCall - 包含工具名和输入参数的 ToolUseBlock
+     * @yields 工具函数执行过程中产生的增量 ToolResponse 对象
+     * @returns 工具函数执行完毕后的最终完整 ToolResponse
      */
     // 工具执行入口：校验入参 → 调用工具 → 把 string / ToolResponse / Generator 统一收敛成 ToolResponse。
     async *callToolFunction(toolCall: ToolCallBlock): AsyncGenerator<ToolResponse, ToolResponse> {
-        // If the tool is registered
+        // 如果该工具已注册
         const tool = this.tools.find(tool => tool.name === toolCall.name);
 
         if (!tool) {
@@ -164,7 +164,7 @@ Usage:
             return notFoundRes;
         }
 
-        // Parse the input arguments using the tool's schema
+        // 使用工具的 schema 解析输入参数
         let parsedInput: Record<string, unknown>;
         try {
             parsedInput = _jsonLoadsWithRepair(toolCall.input);
@@ -194,20 +194,20 @@ Usage:
             return parseErrorRes;
         }
 
-        // Log the tool call with parsed input
+        // 记录带解析后输入的工具调用
         if (!tool.call) {
             throw new Error(
                 `Cannot execute external tool '${toolCall.name}' because no call method is defined for it in the toolkit.`
             );
         }
 
-        // Execute the tool function and await the result
-        // Note: await on a non-Promise value returns the value itself
+        // 执行工具函数并等待结果
+        // 注意：对非 Promise 值使用 await 会直接返回该值本身
         let finalRes: ToolResponse | null = null;
         try {
             const res = await tool.call(parsedInput);
 
-            // If res is a string
+            // 如果 res 是字符串
             if (typeof res === 'string') {
                 const textRes = createToolResponse({
                     content: [
@@ -223,18 +223,18 @@ Usage:
                 yield textRes;
                 finalRes = textRes;
             } else if (isToolResponse(res)) {
-                // If res is a ToolResponse
+                // 如果 res 是 ToolResponse
                 yield res as ToolResponse;
                 finalRes = res as ToolResponse;
             } else if (Symbol.asyncIterator in res) {
                 // 流式工具：AsyncGenerator 的每个中间结果都会转成事件，最终结果再写入上下文。
-                // If res is an AsyncGenerator of string or ToolResponse
+                // 如果 res 是 string 或 ToolResponse 的 AsyncGenerator
                 const accContent: ToolResponse['content'] = [];
                 let nextResult = await (res as AsyncGenerator<string | ToolResponse>).next();
 
                 while (!nextResult.done) {
                     const currentValue = nextResult.value;
-                    // Peek ahead to determine if this is the last value
+                    // 预读下一个值以判断当前值是否为最后一个
                     nextResult = await (res as AsyncGenerator<string | ToolResponse>).next();
                     const isLastValue = nextResult.done;
 
@@ -253,7 +253,7 @@ Usage:
                         });
                         yield itemRes;
 
-                        // Accumulate the text content into finalRes
+                        // 将文本内容累积到 finalRes
                         accContent.push({
                             id: crypto.randomUUID(),
                             created_at: new Date().toISOString(),
@@ -261,11 +261,11 @@ Usage:
                             text: currentValue,
                         });
                     } else if (isToolResponse(currentValue)) {
-                        // Use the isLast from the ToolResponse if set, otherwise use our calculated value
+                        // 如果 ToolResponse 中已设置 isLast 则沿用，否则使用上面计算出的值
                         currentValue.isLast = currentValue.isLast ?? isLastValue;
                         yield currentValue as ToolResponse;
 
-                        // Accumulate the content of the ToolResponse into finalRes
+                        // 将 ToolResponse 的内容累积到 finalRes
                         accContent.push(...currentValue.content);
                     }
                 }
@@ -274,13 +274,13 @@ Usage:
                     state: 'success',
                 });
             } else if (Symbol.iterator in res) {
-                // If res is a Generator of string or ToolResponse
+                // 如果 res 是 string 或 ToolResponse 的 Generator
                 const accContent: ToolResponse['content'] = [];
                 let nextResult = (res as Generator<string | ToolResponse>).next();
 
                 while (!nextResult.done) {
                     const currentValue = nextResult.value;
-                    // Peek ahead to determine if this is the last value
+                    // 预读下一个值以判断当前值是否为最后一个
                     nextResult = (res as Generator<string | ToolResponse>).next();
                     const isLastValue = nextResult.done;
 
@@ -298,7 +298,7 @@ Usage:
                             state: 'running',
                         });
                         yield itemRes;
-                        // Accumulate the text content into finalRes
+                        // 将文本内容累积到 finalRes
                         accContent.push({
                             id: crypto.randomUUID(),
                             created_at: new Date().toISOString(),
@@ -306,10 +306,10 @@ Usage:
                             text: currentValue,
                         });
                     } else if (isToolResponse(currentValue)) {
-                        // Use the isLast from the ToolResponse if set, otherwise use our calculated value
+                        // 如果 ToolResponse 中已设置 isLast 则沿用，否则使用上面计算出的值
                         currentValue.isLast = currentValue.isLast ?? isLastValue;
                         yield currentValue as ToolResponse;
-                        // Accumulate the content of the ToolResponse into finalRes
+                        // 将 ToolResponse 的内容累积到 finalRes
                         accContent.push(...currentValue.content);
                     }
                 }
@@ -362,8 +362,8 @@ Usage:
             });
         }
 
-        // Clean the finalRes by merging the adjacent text blocks into one block, leaving
-        // multimodal content blocks (e.g. image, audio) unchanged
+        // 清理 finalRes：把相邻的文本块合并为一个块，
+        // 多模态内容块（如图片、音频）保持不变
         const cleanedContent: ToolResponse['content'] = [];
         let textBuffer = '';
         for (const block of finalRes.content) {
@@ -382,7 +382,7 @@ Usage:
                 cleanedContent.push(block);
             }
         }
-        // The remaining text in the buffer, if any, should also be pushed to the cleanedContent
+        // 缓冲区中剩余的文本（如果有）也应推入 cleanedContent
         if (textBuffer) {
             cleanedContent.push({
                 id: crypto.randomUUID(),
@@ -399,9 +399,9 @@ Usage:
     }
 
     /**
-     * Returns the JSON schemas for all registered tools in a format compatible with LLM APIs.
+     * 以兼容 LLM API 的格式返回所有已注册工具的 JSON schema。
      *
-     * @returns An array of ToolJSONSchema objects
+     * @returns ToolJSONSchema 对象数组
      */
     getJSONSchemas(): ToolSchema[] {
         return this.tools.map(tool => {
@@ -422,9 +422,9 @@ Usage:
     }
 
     /**
-     * Get the instruction prompt for the agent to use the skills.
+     * 获取供 agent 使用技能的指令提示词。
      *
-     * @returns A string containing the instruction prompt of the available skills and how to use them.
+     * @returns 包含可用技能及其使用方式的指令提示词字符串。
      */
     // 渐进披露：system prompt 只注入 name/description/location，全文由 Skill 工具按需读取。
     getSkillsPrompt(): string {
@@ -437,16 +437,16 @@ Usage:
                 // 首先获取绝对路径
                 const absSkillPath = path.resolve(skillPath);
 
-                // Check if directory exists
+                // 检查目录是否存在
                 if (!fs.existsSync(absSkillPath) || !fs.statSync(absSkillPath).isDirectory()) {
                     return;
                 }
 
-                // First, check if SKILL.md exists directly in this directory
+                // 首先检查该目录下是否直接存在 SKILL.md
                 const skillMdPath = path.join(absSkillPath, 'SKILL.md');
                 if (!fs.existsSync(skillMdPath)) return;
 
-                // Read the SKILL.md file and extract the name and description from the YAML front matter
+                // 读取 SKILL.md 文件，并从 YAML front matter 中提取 name 与 description
                 try {
                     const content = fs.readFileSync(skillMdPath, 'utf-8');
                     const { data } = matter(content);
@@ -469,12 +469,12 @@ Usage:
             this.skillDirs.forEach(skillDir => {
                 const absSkillDir = path.resolve(skillDir);
 
-                // Check if directory exists
+                // 检查目录是否存在
                 if (!fs.existsSync(absSkillDir) || !fs.statSync(absSkillDir).isDirectory()) {
                     return;
                 }
 
-                // Read all subdirectories in the skillDir
+                // 读取 skillDir 下的所有子目录
                 const subdirs = fs.readdirSync(absSkillDir).filter(subdir => {
                     const subdirPath = path.join(absSkillDir, subdir);
                     return fs.statSync(subdirPath).isDirectory();
@@ -533,18 +533,18 @@ ${skillsXml}
     }
 
     /**
-     * The agent skill tool to read SKILL.md file content based on the skill name.
+     * agent 技能工具，用于根据技能名读取 SKILL.md 文件内容。
      * @param root0
      * @param root0.name
-     * @returns The content of the SKILL.md file for the specified skill, or an error message if the skill is not
-     * found or the SKILL.md file cannot be read.
+     * @returns 指定技能的 SKILL.md 文件内容；若技能未找到或
+     * SKILL.md 文件无法读取，则返回错误信息。
      */
     // Skill 不是函数调用：模型按 description 选中技能后，再用 name 读取 SKILL.md 全文。
     private async _skillTool({ name }: { name: string }): Promise<ToolResponse> {
         if (this._skillCache[name]) {
-            // Look up the skill name in the cache to get the corresponding directory path
+            // 在缓存中查找技能名，以获取对应的目录路径
             const skillDir = this._skillCache[name];
-            // Read the SKILL.md file in the skill directory and return its content as the tool response
+            // 读取技能目录中的 SKILL.md 文件，并将其内容作为工具响应返回
             const skillMdPath = path.join(skillDir, 'SKILL.md');
             if (!fs.existsSync(skillMdPath)) {
                 try {
@@ -564,7 +564,7 @@ ${skillsXml}
             }
         }
 
-        // Scan the skills and skillDirs again to find the skill if it's not in the cache and refresh the cache at the same time
+        // 若缓存中不存在该技能，则重新扫描 skills 和 skillDirs 查找该技能，同时刷新缓存
         this.getSkillsPrompt();
         const refreshedSkillDir = this._skillCache[name];
         if (refreshedSkillDir) {
@@ -599,9 +599,9 @@ ${skillsXml}
     }
 
     /**
-     * Checks if a tool requires user confirmation before execution based on its name.
-     * @param toolName The name of the tool to check for user confirmation requirement.
-     * @returns A boolean indicating whether the specified tool requires user confirmation before execution. If the tool is not found, it returns false.
+     * 根据工具名检查该工具在执行前是否需要用户确认。
+     * @param toolName 要检查是否需要用户确认的工具名称。
+     * @returns 布尔值，表示指定工具在执行前是否需要用户确认。若工具未找到，则返回 false。
      */
     // 审批声明：工具层只表达“要不要问”，具体交互（UI/策略/白名单）由宿主实现。
     requireUserConfirm(toolName: string): boolean {
@@ -610,9 +610,9 @@ ${skillsXml}
     }
 
     /**
-     * Checks if a tool requires external execution (e.g., by an MCP client) based on its name.
+     * 根据工具名检查该工具是否需要外部执行（例如由 MCP 客户端执行）。
      * @param toolName
-     * @returns A boolean indicating whether the specified tool requires external execution. If the tool is not found, it returns false.
+     * @returns 布尔值，表示指定工具是否需要外部执行。若工具未找到，则返回 false。
      */
     requireExternalExecution(toolName: string): boolean {
         const tool = this.tools.find(tool => tool.name === toolName);

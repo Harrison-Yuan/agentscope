@@ -8,11 +8,11 @@ import { createToolResponse, ToolResponse } from './response';
 const execAsync = promisify(exec);
 
 /**
- * Tool for executing bash commands in a shell environment.
- * Intended for terminal operations such as git, npm, and docker.
- * File operations should use the dedicated Read, Write, Edit, Glob, and Grep tools instead.
+ * 用于在 shell 环境中执行 bash 命令的工具。
+ * 适用于 git、npm、docker 等终端操作。
+ * 文件操作应改用专用的 Read、Write、Edit、Glob 和 Grep 工具。
  *
- * @returns A Tool object for executing bash commands, with a call method that performs the execution and returns the output or error message.
+ * @returns 用于执行 bash 命令的 Tool 对象，其 call 方法负责执行命令并返回输出或错误信息。
  */
 export function Bash() {
     return {
@@ -70,13 +70,13 @@ While the Bash tool can do similar things, it's better to use the built-in tools
         requireUserConfirm: true,
 
         /**
-         * Executes a bash command and returns its output.
+         * 执行 bash 命令并返回其输出。
          *
-         * @param root0 - The parameters object
-         * @param root0.command - The bash command to execute
-         * @param root0.description - Optional description of what the command does
-         * @param root0.timeout - Optional timeout in milliseconds (default: 120000, max: 600000)
-         * @returns The stdout of the command, or an error message if the command fails
+         * @param root0 - 参数对象
+         * @param root0.command - 要执行的 bash 命令
+         * @param root0.description - 命令用途的可选描述
+         * @param root0.timeout - 可选的超时时间（毫秒，默认 120000，最大 600000）
+         * @returns 命令的 stdout，若命令失败则返回错误信息
          */
         async call({
             command,
@@ -91,13 +91,13 @@ While the Bash tool can do similar things, it's better to use the built-in tools
                 const maxTimeout = 600000;
                 const effectiveTimeout = Math.min(timeout, maxTimeout);
 
-                // Determine the appropriate shell based on platform
+                // 根据平台确定合适的 shell
                 let shell: string;
                 if (process.platform === 'win32') {
-                    // On Windows, use cmd.exe or PowerShell
+                    // 在 Windows 上使用 cmd.exe 或 PowerShell
                     shell = process.env.COMSPEC || 'cmd.exe';
                 } else {
-                    // On Unix-like systems, use the user's shell or default to bash
+                    // 在类 Unix 系统上使用用户的 shell，默认回退到 bash
                     shell = process.env.SHELL || '/bin/bash';
                 }
 
@@ -109,7 +109,7 @@ While the Bash tool can do similar things, it's better to use the built-in tools
                     shell,
                 });
 
-                // Normalize line endings to LF for cross-platform consistency
+                // 为保持跨平台一致，将换行符统一规范化为 LF
                 const normalizedOutput = stdout.replace(/\r\n/g, '\n');
 
                 // 裁剪手段：输出超过 30000 字符直接截断。

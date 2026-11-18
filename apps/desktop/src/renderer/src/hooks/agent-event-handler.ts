@@ -3,7 +3,7 @@ import { createMsg, appendEvent, Msg } from '@agentscope-ai/agentscope/message';
 import type { Dispatch, SetStateAction } from 'react';
 
 /**
- * Applies an agent event to update message and sending state.
+ * 应用一个 agent 事件以更新消息和发送状态。
  * @param event
  * @param setMessages
  * @param setSending
@@ -20,7 +20,7 @@ export function applyAgentEvent(
             setMessages(prev => {
                 const existingMsg = prev.find(m => m.id === event.reply_id);
                 if (existingMsg) {
-                    // Already exists, mark as not finished
+                    // 已存在，标记为未完成
                     return prev.map(m =>
                         m.id === event.reply_id ? { ...m, finished_at: null } : m
                     );
@@ -69,9 +69,9 @@ export function applyAgentEvent(
             setMessages(prev => {
                 return prev.map(m => {
                     if (m.id !== event.reply_id) return m;
-                    // Deep clone content blocks to avoid mutation side effects
-                    // (React Strict Mode calls updaters twice to detect impure functions)
-                    // tool_result blocks need their output array deep-cloned too
+                    // 深拷贝内容块以避免变更副作用
+                    // （React Strict Mode 会调用更新函数两次以检测非纯函数）
+                    // tool_result 块的 output 数组也需要深拷贝
                     const cloned: Msg = {
                         ...m,
                         content: m.content.map(b => {

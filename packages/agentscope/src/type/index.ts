@@ -8,7 +8,7 @@ export type JSONSerializableObject =
     | JSONSerializableObject[]
     | { [key: string]: JSONSerializableObject };
 
-/** The reason a reply finished. */
+/** 回复结束的原因。 */
 export enum ReplyFinishedReason {
     COMPLETED = 'completed',
     INTERRUPTED = 'interrupted',
@@ -17,7 +17,7 @@ export enum ReplyFinishedReason {
 }
 
 // Harness 错误分类：供上层统一重试/告警/展示；Agent 循环目前尚未接线。
-/** Classification of a fatal error that terminated a reply. */
+/** 终止回复的致命错误分类。 */
 export enum ErrorType {
     AUTHENTICATION = 'authentication',
     PERMISSION = 'permission',
@@ -30,16 +30,16 @@ export enum ErrorType {
     UNKNOWN = 'unknown',
 }
 
-/** Structured, UI-facing description of a fatal reply error. */
+/** 面向 UI 的结构化致命回复错误描述。 */
 export class ErrorInfo {
     type: ErrorType;
     message: string;
 
     /**
-     * Create error information.
-     * @param options Error fields.
-     * @param options.message Sanitized message.
-     * @param options.type Stable classification.
+     * 创建错误信息。
+     * @param options 错误字段。
+     * @param options.message 已脱敏的消息。
+     * @param options.type 稳定的分类。
      */
     constructor({ message, type = ErrorType.UNKNOWN }: { message: string; type?: ErrorType }) {
         this.type = type;
@@ -67,15 +67,15 @@ export interface ToolSchema {
 }
 
 /**
- * Defines the possible function types for a tool function:
- * - Synchronous: string
- * - Asynchronous: Promise<string>
- * - Synchronous Generator: Generator<string>
- * - Asynchronous Generator: AsyncGenerator<string>
- * - Synchronous: ToolResponse
- * - Asynchronous: Promise<ToolResponse>
- * - Synchronous Generator: Generator<ToolResponse>
- * - Asynchronous Generator: AsyncGenerator<ToolResponse>
+ * 定义工具函数可能的函数类型：
+ * - 同步：string
+ * - 异步：Promise<string>
+ * - 同步生成器：Generator<string>
+ * - 异步生成器：AsyncGenerator<string>
+ * - 同步：ToolResponse
+ * - 异步：Promise<ToolResponse>
+ * - 同步生成器：Generator<ToolResponse>
+ * - 异步生成器：AsyncGenerator<ToolResponse>
  */
 export type ToolFunction = (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

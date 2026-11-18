@@ -7,24 +7,24 @@ import { Msg } from '../message';
 import { AgentState, StorageBase } from './base';
 
 /**
- * Local file system storage implementation.
- * Stores agent state in JSON files with support for incremental context updates.
+ * 本地文件系统存储实现。
+ * 把 Agent 状态存为 JSON 文件，并支持上下文增量更新。
  */
 export class LocalFileStorage extends StorageBase {
     saveDir: string;
     offloadDir?: string;
 
     /**
-     * Internal metadata key prefix for storage-layer fields.
-     * Fields with this prefix are managed by storage and filtered out when returning to agent layer.
+     * 存储层字段的内部元数据键前缀。
+     * 带此前缀的字段由存储层管理，返回给 Agent 层时会被过滤掉。
      */
     private readonly INTERNAL_PREFIX = '_storage_';
 
     /**
-     * Initialize a LocalFileStorage instance.
+     * 初始化 LocalFileStorage 实例。
      * @param root0
-     * @param root0.pathSegments - Path segments to determine the directory for saving agent state (e.g. ['rootDir', '{sessionId}'])
-     * @param root0.offloadPathSegments - Optional path segments for offloading compressed context for agentic search (e.g. ['rootDir', 'offload'])
+     * @param root0.pathSegments - 用于确定保存 Agent 状态目录的路径片段（例如 ['rootDir', '{sessionId}']）
+     * @param root0.offloadPathSegments - 可选，用于外置压缩上下文以支持 agentic 检索的路径片段（例如 ['rootDir', 'offload']）
      */
     constructor({
         pathSegments = [],
@@ -40,16 +40,16 @@ export class LocalFileStorage extends StorageBase {
     }
 
     /**
-     * Load the complete agent state including context and metadata.
+     * 加载完整的 Agent 状态，包括上下文和元数据。
      * @param options
-     * @param options.agentId - The agent identifier
-     * @returns The agent state with context and metadata (internal fields filtered out)
+     * @param options.agentId - Agent 标识符
+     * @returns 包含上下文和元数据的 Agent 状态（内部字段已过滤）
      */
     // 可恢复：从 context.jsonl + state.json 恢复上下文与断点信息。
     async loadAgentState(options?: { agentId?: string }): Promise<AgentState> {
         const agentDir = path.join(this.saveDir, options?.agentId || '');
 
-        // If the agent directory doesn't exist, return empty state
+        // 若 Agent 目录不存在，则返回空状态
         if (!fs.existsSync(agentDir)) {
             console.log(`Agent directory ${agentDir} does not exist. Returning empty state.`);
             return {
@@ -62,19 +62,19 @@ export class LocalFileStorage extends StorageBase {
         const contextFile = path.join(agentDir, 'context.jsonl');
         const stateFile = path.join(agentDir, 'state.json');
 
-        // Load metadata
+        // 加载元数据
         let metadata: Record<string, unknown> = {};
         if (fs.existsSync(stateFile)) {
             const content = fs.readFileSync(stateFile, 'utf-8');
             metadata = JSON.parse(content);
         }
 
-        // Extract internal compression boundary ID
+        // 提取内部压缩边界 ID
         const compressionBoundaryMsgId = metadata[
             `${this.INTERNAL_PREFIX}compressionBoundaryMsgId`
         ] as string | undefined;
 
-        // Load context (incrementally if compression boundary exists)
+        // 加载上下文（若存在压缩边界则增量加载）
         let context: Msg[] = [];
         if (fs.existsSync(contextFile)) {
             const content = fs.readFileSync(contextFile, 'utf-8');
@@ -85,22 +85,22 @@ export class LocalFileStorage extends StorageBase {
                 .map(line => JSON.parse(line));
 
             if (compressionBoundaryMsgId) {
-                // Load only messages after the compression boundary
+                // 仅加载压缩边界之后的消息
                 const boundaryIndex = allMsgs.findIndex(msg => msg.id === compressionBoundaryMsgId);
                 if (boundaryIndex !== -1) {
-                    // Include the boundary message itself
+                    // 包含边界消息本身
                     context = allMsgs.slice(boundaryIndex);
                 } else {
-                    // Boundary not found, load all messages
+                    // 未找到边界，加载所有消息
                     context = allMsgs;
                 }
             } else {
-                // No compression, load all messages
+                // 无压缩，加载所有消息
                 context = allMsgs;
             }
         }
 
-        // Filter out internal fields from metadata before returning
+        // 返回前从元数据中过滤掉内部字段
         const publicMetadata = this._filterInternalFields(metadata);
 
         return {
@@ -110,11 +110,11 @@ export class LocalFileStorage extends StorageBase {
     }
 
     /**
-     * Save the complete agent state including context and metadata.
+     * 保存完整的 Agent 状态，包括上下文和元数据。
      * @param options
-     * @param options.agentId - The agent identifier
-     * @param options.context - The conversation context to save
-     * @param options.metadata - The agent metadata to save
+     * @param options.agentId - Agent 标识符
+     * @param options.context - 要保存的对话上下文
+     * @param options.metadata - 要保存的 Agent 元数据
      */
     async saveAgentState(options: {
         agentId?: string;
@@ -125,23 +125,23 @@ export class LocalFileStorage extends StorageBase {
         const contextFile = path.join(agentDir, 'context.jsonl');
         const stateFile = path.join(agentDir, 'state.json');
 
-        // Ensure directory exists
+        // 确保目录存在
         if (!fs.existsSync(agentDir)) {
             fs.mkdirSync(agentDir, { recursive: true });
         }
 
-        // Determine compression boundary (first message in current context)
+        // 确定压缩边界（当前上下文中的第一条消息）
         const compressionBoundaryMsgId = options.context[0]?.id;
 
-        // Save context with incremental append optimization
+        // 以增量追加方式保存上下文
         if (!fs.existsSync(contextFile)) {
-            // First time: write all messages
+            // 首次：写入所有消息
             const content = options.context.map(msg => JSON.stringify(msg)).join('\n');
             if (content) {
                 fs.writeFileSync(contextFile, content + '\n', 'utf-8');
             }
         } else {
-            // File exists: append only new messages
+            // 文件已存在：仅追加新消息
             const existingContent = fs.readFileSync(contextFile, 'utf-8');
             const existingLines = existingContent
                 .trim()
@@ -152,13 +152,13 @@ export class LocalFileStorage extends StorageBase {
                 const lastLine = existingLines[existingLines.length - 1];
                 const lastMsg = JSON.parse(lastLine);
 
-                // Find new messages that need to be saved (including the last saved message to overwrite it)
+                // 找出需要保存的新消息（包含最后一条已保存消息，以便覆盖它）
                 const lastMsgIndex = options.context.findIndex(msg => msg.id === lastMsg.id);
                 const newMsgs =
                     lastMsgIndex >= 0 ? options.context.slice(lastMsgIndex) : options.context;
 
                 if (newMsgs.length > 0) {
-                    // Combine existing messages (without last line) with new messages
+                    // 合并已有消息（去掉最后一行）与新消息
                     const allLines = [
                         ...existingLines.slice(0, -1),
                         ...newMsgs.map(msg => JSON.stringify(msg)),
@@ -167,7 +167,7 @@ export class LocalFileStorage extends StorageBase {
                     fs.writeFileSync(contextFile, content, 'utf-8');
                 }
             } else {
-                // File is empty, write all messages
+                // 文件为空，写入所有消息
                 const content = options.context.map(msg => JSON.stringify(msg)).join('\n');
                 if (content) {
                     fs.writeFileSync(contextFile, content + '\n', 'utf-8');
@@ -175,7 +175,7 @@ export class LocalFileStorage extends StorageBase {
             }
         }
 
-        // Save metadata with internal compression boundary
+        // 保存元数据，并写入内部压缩边界
         const internalMetadata = {
             ...options.metadata,
             [`${this.INTERNAL_PREFIX}compressionBoundaryMsgId`]: compressionBoundaryMsgId,
@@ -184,9 +184,9 @@ export class LocalFileStorage extends StorageBase {
     }
 
     /**
-     * Filter out internal storage fields from metadata.
-     * @param metadata - The metadata object
-     * @returns Metadata with internal fields removed
+     * 从元数据中过滤掉内部存储字段。
+     * @param metadata - 元数据对象
+     * @returns 已移除内部字段的元数据
      */
     private _filterInternalFields(metadata: Record<string, unknown>): Record<string, unknown> {
         const filtered: Record<string, unknown> = {};
@@ -199,30 +199,30 @@ export class LocalFileStorage extends StorageBase {
     }
 
     /**
-     * Offload the compressed context to external storage for agentic search if needed.
+     * 按需把压缩后的上下文外置到外部存储以支持 agentic 检索。
      * @param options
-     * @param options.agentId - The agent identifier
-     * @param options.msgs - The messages to offload
-     * @returns The file path of the offloaded context, or undefined if offloading is not implemented or not needed
+     * @param options.agentId - Agent 标识符
+     * @param options.msgs - 要外置的消息
+     * @returns 外置上下文的文件路径；若未实现外置或无需外置则返回 undefined
      */
     async offloadContext(options: { agentId?: string; msgs: Msg[] }): Promise<string | undefined> {
         if (!this.offloadDir) {
             return;
         }
 
-        // Offload the compressed context to the text file
-        // e.g. 2026-03-01.txt
+        // 把压缩后的上下文外置到文本文件
+        // 例如 2026-03-01.txt
         const fileName = `${new Date().toISOString().split('T')[0]}.txt`;
         const offloadFile = path.join(this.offloadDir, options.agentId || '', fileName);
         const offloadDataDir = path.join(this.offloadDir, options.agentId || '', 'data');
 
-        // Create the dir if it doesn't exist
+        // 目录不存在时创建它
         const offloadAgentDir = path.dirname(offloadFile);
         if (!fs.existsSync(offloadAgentDir)) {
             fs.mkdirSync(offloadAgentDir, { recursive: true });
         }
 
-        // Append the new context to the offload file
+        // 把新的上下文追加到外置文件
         let appendContent = '';
         for (const msg of options.msgs) {
             const msgContent: string[] = [];
@@ -237,7 +237,7 @@ export class LocalFileStorage extends StorageBase {
                                 `${msg.name}: <data src={${block.source.url}} type={${block.source.media_type}} />`
                             );
                         } else if (block.source.type === 'base64') {
-                            // Save the base64 data to a file and add a reference to the file in the offload content
+                            // 把 base64 数据保存为文件，并在外置内容中添加对该文件的引用
                             const mainType = block.source.media_type.split('/')[0];
                             const extension = mime.extension(block.source.media_type) || 'bin';
                             const filePath = path.join(
@@ -262,7 +262,7 @@ export class LocalFileStorage extends StorageBase {
             appendContent += msgContent.join('\n') + '\n';
         }
 
-        // Append to the offload file
+        // 追加到外置文件
         fs.appendFileSync(offloadFile, appendContent, 'utf-8');
 
         return offloadFile;

@@ -76,31 +76,31 @@ const DEFAULT_SUMMARY_SCHEMA = z.object({
 
 export interface CompressionConfig {
     /**
-     * Whether to enable memory compression.
+     * 是否启用记忆压缩。
      */
     enabled: boolean;
     /**
-     * The token count threshold to trigger memory compression.
+     * 触发记忆压缩的 token 数量阈值。
      */
     triggerThreshold: number;
     /**
-     * The function to count the tokens of the messages in memory. If not provided, a heuristic token counting method will be used by default.
+     * 统计记忆中消息 token 数的函数。未提供时默认使用启发式 token 计数方法。
      */
     tokenCountFunc?: (msgs: Msg[]) => number;
     /**
-     * The chat model used for compression. If not provided, the same model as the agent will be used by default.
+     * 用于压缩的聊天模型。未提供时默认使用与 agent 相同的模型。
      */
     compressionModel?: ChatModelBase;
     /**
-     * The prompt template for memory compression. It should be designed to instruct the model to compress the input messages into a concise summary while preserving important information. If not provided, a default prompt will be used.
+     * 记忆压缩使用的提示词模板。应设计为指示模型在保留重要信息的前提下，把输入消息压缩成简洁摘要。未提供时使用默认提示词。
      */
     compressionPrompt?: string;
     /**
-     * The JSON schema for the compressed summary. The model will be guided to compress the memory into a structured summary following this schema. If not provided, a default schema with a single text field will be used.
+     * 压缩摘要的 JSON schema。模型会按该 schema 将记忆压缩为结构化摘要。未提供时使用仅含单个文本字段的默认 schema。
      */
     summarySchema?: z.ZodObject;
     /**
-     * The number of recent messages to keep in the context without compression.
+     * 上下文中保留不参与压缩的最近消息数量。
      */
     keepRecent?: number;
 }
@@ -116,7 +116,7 @@ export interface AgentOptions {
 }
 
 /**
- * The unified agent class in AgentScope library.
+ * AgentScope 库中统一的 agent 类。
  *
  * Harness 核心：把模型输出的概率 token 变成可执行、可恢复、可验证的过程。
  * - 可执行：_reasoning 调模型，_acting 执行工具
@@ -124,7 +124,7 @@ export interface AgentOptions {
  * - 可验证：ToolResponse.state / ToolResultBlock.state
  */
 export class Agent {
-    // Agent configuration
+    // Agent 配置
     name: string;
     model: ChatModelBase;
     maxIters: number;
@@ -135,25 +135,25 @@ export class Agent {
     private _sysPrompt: string;
     compressionConfig?: CompressionConfig;
 
-    // Agent state
+    // Agent 状态
     replyId: string;
     curIter: number;
     confirmedToolCallIds: string[];
     curSummary: string;
 
     /**
-     * Initialize an agent instance with the given parameters.
+     * 使用给定参数初始化一个 agent 实例。
      *
-     * @param options - The agent configuration options.
-     * @param options.name - The name of the agent.
-     * @param options.sysPrompt - The system prompt for the agent.
-     * @param options.model - The chat model to use.
-     * @param options.maxIters - Maximum iterations (default: 5).
-     * @param options.memory - Memory storage (default: InMemoryMemory).
-     * @param options.toolkit - Toolkit for tools (default: Toolkit).
+     * @param options - Agent 配置选项。
+     * @param options.name - Agent 的名称。
+     * @param options.sysPrompt - Agent 的系统提示词。
+     * @param options.model - 使用的聊天模型。
+     * @param options.maxIters - 最大迭代次数（默认：5）。
+     * @param options.memory - 记忆存储（默认：InMemoryMemory）。
+     * @param options.toolkit - 工具集（默认：Toolkit）。
      */
     constructor(options: AgentOptions) {
-        // Check maxIters mast be greater than 0
+        // 检查 maxIters 必须大于 0
         if (options.maxIters !== undefined && options.maxIters <= 0) {
             throw new Error('maxIters must be greater than 0');
         }
@@ -168,10 +168,10 @@ export class Agent {
         this.storage = options.storage;
         this.compressionConfig = options.compressionConfig;
 
-        // Record if the agent state has been loaded from storage to avoid repeat loading
+        // 记录 agent 状态是否已从存储加载，避免重复加载
         this._loaded = false;
 
-        // The states that tracks the current reply session
+        // 跟踪当前 reply 会话的状态
         this.replyId = '';
         this.curIter = 0;
         this.confirmedToolCallIds = [];
@@ -179,7 +179,7 @@ export class Agent {
     }
 
     /**
-     * Load the state from the storage if storage is provided and not loaded yet.
+     * 如果提供了存储且尚未加载，则从存储中加载状态。
      */
     async loadState() {
         if (this._loaded || !this.storage) return;
@@ -193,7 +193,7 @@ export class Agent {
     }
 
     /**
-     * Save the state of the current reply session to storage if storage is provided.
+     * 如果提供了存储，则把当前 reply 会话的状态保存到存储中。
      */
     async saveState() {
         if (!this.storage) return;
@@ -209,9 +209,9 @@ export class Agent {
     }
 
     /**
-     * Get the system prompt of the agent.
+     * 获取 agent 的系统提示词。
      *
-     * @returns The system prompt string.
+     * @returns 系统提示词字符串。
      */
     public get sysPrompt() {
         const skillsPrompt = this.toolkit.getSkillsPrompt();
@@ -222,16 +222,16 @@ export class Agent {
     }
 
     /**
-     * Reply to the given message and stream agent events as they are generated.
+     * 回复给定消息，并在生成过程中流式输出 agent 事件。
      *
-     * @param options - The reply options containing the incoming message.
-     * @returns An async generator that yields agent events and resolves to the final reply message.
+     * @param options - 包含传入消息的 reply 选项。
+     * @returns 一个异步生成器，产出 agent 事件，并最终解析为最终回复消息。
      */
     public async *replyStream(options: ReplyOptions): AsyncGenerator<AgentEvent, Msg> {
-        // Load the agent state from storage if not loaded yet
+        // 如果尚未加载，则从存储中加载 agent 状态
         await this.loadState();
         try {
-            // Yield the reply stream
+            // 产出回复流
             return yield* this._reply(options);
         } finally {
             await this.saveState();
@@ -239,14 +239,14 @@ export class Agent {
     }
 
     /**
-     * Reply to the given message, consuming all streamed events internally.
+     * 回复给定消息，在内部消费所有流式事件。
      *
-     * @param options - The reply options containing the incoming message.
-     * @param options.msgs - The incoming message(s) to reply to.
-     * @returns A promise that resolves to the final reply message.
+     * @param options - 包含传入消息的 reply 选项。
+     * @param options.msgs - 需要回复的传入消息。
+     * @returns 一个解析为最终回复消息的 promise。
      */
     public async reply(options: ReplyOptions): Promise<Msg> {
-        // Load the agent state from storage if not loaded yet
+        // 如果尚未加载，则从存储中加载 agent 状态
         await this.loadState();
         try {
             const res = this._reply(options);
@@ -262,8 +262,8 @@ export class Agent {
     }
 
     /**
-     * Save the given content blocks into the context as a new block in the last assistant message,
-     * or create a new assistant message if the last message is not from the assistant or has a different name.
+     * 把给定的内容块作为新块保存到上下文中最后一条 assistant 消息里；
+     * 如果最后一条消息不是来自该 assistant，或名称不同，则新建一条 assistant 消息。
      * @param blocks
      * @param usage
      */
@@ -313,8 +313,8 @@ export class Agent {
     }
 
     /**
-     * Get the pending tool calls that have no results yet in the context.
-     * @returns An array of pending `ToolCallBlock`s that are waiting for execution results.
+     * 获取上下文中尚未有结果的待处理工具调用。
+     * @returns 一个待处理 `ToolCallBlock` 数组，这些调用正在等待执行结果。
      */
     protected _getPendingToolCalls(): ToolCallBlock[] {
         if (this.context.length === 0) return [];
@@ -330,8 +330,8 @@ export class Agent {
     }
 
     /**
-     * Get the awaiting tool calls that require user confirmation or external execution.
-     * @returns An array of `ToolCallBlock`s that are waiting for user confirmation or external execution.
+     * 获取需要用户确认或外部执行的等待中工具调用。
+     * @returns 一个 `ToolCallBlock` 数组，这些调用正在等待用户确认或外部执行。
      */
     protected _getAwaitingToolCalls(): {
         awaitingType?: EventType.REQUIRE_USER_CONFIRM | EventType.REQUIRE_EXTERNAL_EXECUTION;
@@ -342,7 +342,7 @@ export class Agent {
         // 审批分组：连续需要确认的工具调用会一起挂起，返回给宿主一次性处理。
         const pendingToolCalls = this._getPendingToolCalls();
 
-        // The tool calls that should be executed before yield the (maybe have) user-confirm or external-execution event
+        // 在产出（可能存在的）用户确认或外部执行事件之前应当先执行的工具调用
         const preToolCalls: ToolCallBlock[] = [];
         for (const [index, toolCall] of pendingToolCalls.entries()) {
             if (
@@ -350,7 +350,7 @@ export class Agent {
                 !this.confirmedToolCallIds.includes(toolCall.id)
             ) {
                 toolCall.state = 'asking';
-                // Find the continuous tool calls that require user confirmation
+                // 查找连续的需要用户确认的工具调用
                 let i = index + 1;
                 for (; i < pendingToolCalls.length; i++) {
                     const nextToolCall = pendingToolCalls[i];
@@ -370,7 +370,7 @@ export class Agent {
             }
 
             if (this.toolkit.requireExternalExecution(toolCall.name)) {
-                // Find the continuous tool calls that require external execution
+                // 查找连续的需要外部执行的工具调用
                 let i = index + 1;
                 for (; i < pendingToolCalls.length; i++) {
                     const nextToolCall = pendingToolCalls[i];
@@ -390,33 +390,33 @@ export class Agent {
     }
 
     /**
-     * Core reply logic without middlewares. Observes the incoming message, runs
-     * reasoning/acting iterations up to `maxIters`, and returns the final response.
+     * 不含中间件的核心回复逻辑。观察传入消息，执行
+     * 推理/行动迭代直到 `maxIters`，并返回最终响应。
      *
-     * @param options - The reply options containing the incoming message.
-     * @returns An async generator that yields agent events and resolves to the final reply message.
+     * @param options - 包含传入消息的 reply 选项。
+     * @returns 一个异步生成器，产出 agent 事件，并最终解析为最终回复消息。
      */
     protected async *_reply(options?: ReplyOptions): AsyncGenerator<AgentEvent, Msg> {
         const { expectedEventType } = this._getAwaitingToolCalls();
         if (expectedEventType) {
-            // Checking
+            // 检查
             if (!options || !options.event || options.event.type !== expectedEventType) {
                 throw new Error(
                     `Agent is awaiting for '${expectedEventType}' confirmation, but received event of type '${options?.event?.type ?? 'none'}'.`
                 );
             }
 
-            // handle the external execution result event
+            // 处理外部执行结果事件
             const event = options.event;
             if (event.type === EventType.EXTERNAL_EXECUTION_RESULT) {
-                // Record the tool results into context and go on acting
+                // 将工具结果记录到上下文，然后继续行动阶段
                 this._saveToContext(event.execution_results);
             } else if (event.type === EventType.USER_CONFIRM_RESULT) {
                 for (const result of event.confirm_results) {
                     if (result.confirmed) {
                         this.confirmedToolCallIds.push(result.tool_call.id);
                     } else {
-                        // If user rejected, add a rejection result and handle the pending tool calls
+                        // 如果用户拒绝，添加一个拒绝结果并处理待处理的工具调用
                         const rejectionRes = `<system-info>**Note** the user rejected the execution of tool "${result.tool_call.name}"!</system-info>`;
                         yield {
                             id: crypto.randomUUID(),
@@ -460,7 +460,7 @@ export class Agent {
                         ]);
                     }
                 }
-                // Update tool call states based on confirm results
+                // 根据确认结果更新工具调用状态
                 const confirmedIds = new Set(
                     event.confirm_results.filter(r => r.confirmed).map(r => r.tool_call.id)
                 );
@@ -478,12 +478,12 @@ export class Agent {
                 });
             }
         } else {
-            // The normal reply flow starts without any external event
+            // 正常回复流程在没有外部事件的情况下开始
             this.curIter = 0;
             this.replyId = crypto.randomUUID();
             this.confirmedToolCallIds = [];
 
-            // Yield the run started event
+            // 产出运行开始事件
             yield {
                 id: crypto.randomUUID(),
                 type: EventType.REPLY_START,
@@ -495,7 +495,7 @@ export class Agent {
             } as ReplyStartEvent;
         }
 
-        // Store the incoming message into memory
+        // 将传入消息存储到记忆中
         if (Array.isArray(options?.msgs)) {
             // await this.memory.add(options.msg);
             this.context.push(...options.msgs);
@@ -513,20 +513,20 @@ export class Agent {
                 this._saveToContext(reasoningResponse.content, reasoningResponse.usage);
             }
 
-            // Extract the awaiting tool calls and those should be executed before yielding human-in-the-loop events
+            // 提取等待中的工具调用，以及在产出 human-in-the-loop 事件之前应先执行的工具调用
             const { awaitingType, awaitingToolCalls, preToolCalls } = this._getAwaitingToolCalls();
-            // Execute the pre-tool calls before yielding the user-confirm or external-execution event if there is any
+            // 如果存在用户确认或外部执行事件，则先执行 pre-tool 调用，再产出该事件
             // 注意：这里是串行执行；本项目没有 parallel_tools / max_workers。
             for (const toolCall of preToolCalls) {
                 const actingContent = yield* this._acting({ toolCall });
                 this._saveToContext([actingContent]);
-                // Consume the confirmation after execution
+                // 执行后消费掉该确认
                 this.confirmedToolCallIds = this.confirmedToolCallIds.filter(
                     id => id !== toolCall.id
                 );
             }
 
-            // yield the user-confirm or external-execution event if there is any awaiting tool calls
+            // 如果存在等待中的工具调用，产出用户确认或外部执行事件
             // Harness 审批：挂起并等待宿主确认/外部执行，下一次 reply 从断点恢复。
             if (awaitingType) {
                 yield {
@@ -554,20 +554,20 @@ export class Agent {
                 });
             }
 
-            // Break the loop if there is no tool call in the reasoning message
+            // 如果推理消息中没有工具调用，则跳出循环
             if (preToolCalls.length === 0) break;
 
             this.curIter += 1;
         }
 
-        // If exceed max iterations without text output
+        // 如果超过最大迭代次数仍未产生文本输出
         if (this.context.at(-1)?.content.at(-1)?.type !== 'text') {
-            // Generate a final response
+            // 生成最终回复
             const summaryResponse = yield* this._reasoning({ toolChoice: 'none' });
             this._saveToContext(summaryResponse.content, summaryResponse.usage);
         }
 
-        // Yield the run finished event
+        // 产出运行结束事件
         yield {
             id: crypto.randomUUID(),
             type: EventType.REPLY_END,
@@ -580,19 +580,19 @@ export class Agent {
         return createMsg({
             id: this.replyId,
             name: this.name,
-            // Must be a string for the final output message
+            // 最终输出消息的内容必须是字符串
             content: [this.context.at(-1)!.content.at(-1)!],
             role: 'assistant',
         });
     }
 
     /**
-     * Core reasoning logic without middlewares. Calls the model with the current
-     * memory and system prompt, converts the response to agent events, and saves
-     * the resulting message to memory.
+     * 不含中间件的核心推理逻辑。使用当前记忆与系统提示词
+     * 调用模型，把响应转换为 agent 事件，并将结果消息
+     * 保存到记忆中。
      *
-     * @param options - The reasoning options, including tool choice strategy.
-     * @returns An async generator that yields agent events and resolves to the content blocks of the model response.
+     * @param options - 推理选项，包含工具选择策略。
+     * @returns 一个异步生成器，产出 agent 事件，并最终解析为模型响应的内容块。
      */
     protected async *_reasoning(
         options: ReasoningOptions
@@ -653,13 +653,13 @@ export class Agent {
         };
         let completedResponse: ChatResponse;
         if (this.model.stream) {
-            // Handle streaming response
+            // 处理流式响应
             while (true) {
                 const { value, done } = await (
                     res as AsyncGenerator<ChatResponse, ChatResponse>
                 ).next();
                 if (done) {
-                    // The complete response is returned in the `value` when `done` is true
+                    // 当 `done` 为 true 时，完整响应通过 `value` 返回
                     completedResponse = value as ChatResponse;
                     break;
                 }
@@ -667,12 +667,12 @@ export class Agent {
                 yield* this.convertChatResponseToEvent(blockIds, chunk);
             }
         } else {
-            // Handle non-streaming response, the res is a ChatResponse instance
+            // 处理非流式响应，此时 res 是一个 ChatResponse 实例
             completedResponse = res as ChatResponse;
             yield* this.convertChatResponseToEvent(blockIds, res as ChatResponse);
         }
 
-        // Send end events for text message, thinking message and tool calls
+        // 为文本消息、思考消息和工具调用发送结束事件
         if (blockIds.textBlockId) {
             yield {
                 id: crypto.randomUUID(),
@@ -716,11 +716,11 @@ export class Agent {
     }
 
     /**
-     * Core acting logic without middlewares. Executes the given tool call, streams
-     * intermediate tool result events, and saves the final tool response to memory.
+     * 不含中间件的核心行动逻辑。执行给定的工具调用，流式输出
+     * 中间的工具结果事件，并把最终工具响应保存到记忆中。
      *
-     * @param options - The acting options containing the tool call to execute.
-     * @returns An async generator that yields tool result events.
+     * @param options - 行动选项，包含要执行的工具调用。
+     * @returns 一个异步生成器，产出工具结果事件。
      */
     protected async *_acting(options: ActingOptions): AsyncGenerator<AgentEvent, ToolResultBlock> {
         // 行动阶段：执行单个工具，并把流式结果转成 TOOL_RESULT_* 事件。
@@ -752,13 +752,13 @@ export class Agent {
     }
 
     /**
-     * Receive external observation message(s) and save them into memory.
+     * 接收外部观察消息，并将其保存到记忆中。
      *
-     * @param options - The observe options containing the message to store.
-     * @returns A promise that resolves when the message has been saved to memory.
+     * @param options - 观察选项，包含要存储的消息。
+     * @returns 一个 promise，在消息保存到记忆后解析。
      */
     protected async _observe(options: ObserveOptions): Promise<void> {
-        // Load the agent state from storage if not loaded yet
+        // 如果尚未加载，则从存储中加载 agent 状态
         await this.loadState();
 
         if (Array.isArray(options.msg)) {
@@ -770,18 +770,18 @@ export class Agent {
     }
 
     /**
-     * Convert a `ChatResponse` chunk into a sequence of typed agent events.
-     * Tracks message IDs across calls via the mutable `responseId` object so that
-     * start/content/end events are correctly correlated.
+     * 把一个 `ChatResponse` 分块转换为一系列带类型的 agent 事件。
+     * 通过可变的 `responseId` 对象跨调用跟踪消息 ID，
+     * 从而正确关联 start/content/end 事件。
      *
-     * @param responseId - Mutable object tracking IDs for the current text, thinking, and tool-call messages.
-     * @param responseId.textMessageId - ID of the in-progress text message, or `null` if not yet started.
-     * @param responseId.thinkingMessageId - ID of the in-progress thinking message, or `null` if not yet started.
+     * @param responseId - 用于跟踪当前文本、思考和工具调用消息 ID 的可变对象。
+     * @param responseId.textMessageId - 进行中的文本消息 ID，若尚未开始则为 `null`。
+     * @param responseId.thinkingMessageId - 进行中的思考消息 ID，若尚未开始则为 `null`。
      * @param responseId.textBlockId
      * @param responseId.thinkingBlockId
-     * @param responseId.toolCallIds - List of tool-call IDs seen so far in this response.
-     * @param chunk - The chat response chunk to convert.
-     * @returns An async generator that yields the corresponding agent events.
+     * @param responseId.toolCallIds - 本次响应目前已见到的工具调用 ID 列表。
+     * @param chunk - 要转换的聊天响应分块。
+     * @returns 一个异步生成器，产出对应的 agent 事件。
      */
     protected async *convertChatResponseToEvent(
         responseId: {
@@ -795,7 +795,7 @@ export class Agent {
             switch (block.type) {
                 case 'text':
                     if (responseId.textBlockId === null) {
-                        // A new uuid
+                        // 生成一个新的 uuid
                         responseId.textBlockId = crypto.randomUUID();
                         yield {
                             id: crypto.randomUUID(),
@@ -861,12 +861,12 @@ export class Agent {
     }
 
     /**
-     * Convert a `ToolResponse` into a sequence of typed agent events, followed by
-     * a final `TOOL_RESULT_END` event.
+     * 把一个 `ToolResponse` 转换为一系列带类型的 agent 事件，
+     * 最后再产出一个 `TOOL_RESULT_END` 事件。
      *
-     * @param toolCall - The original tool-use block that triggered this response.
-     * @param toolRes - The tool response containing result content blocks.
-     * @returns An async generator that yields tool result events.
+     * @param toolCall - 触发该响应的原始工具调用块。
+     * @param toolRes - 包含结果内容块的工具响应。
+     * @returns 一个异步生成器，产出工具结果事件。
      */
     protected async *convertToolResponseToEvent(toolCall: ToolCallBlock, toolRes: ToolResponse) {
         for (const block of toolRes.content) {
@@ -918,8 +918,8 @@ export class Agent {
     }
 
     /**
-     * Convert the agent instance to a JSON-serializable object.
-     * @returns An object containing the agent's name and system prompt.
+     * 把 agent 实例转换为可 JSON 序列化的对象。
+     * @returns 一个包含 agent 名称和系统提示词的对象。
      */
     public async toJSON() {
         return {
@@ -930,16 +930,16 @@ export class Agent {
     }
 
     /**
-     * Split the current context into two parts: one part that needs to be compressed and another part that should be reserved based on the compression configuration. The method calculates how many recent "units" (blocks or tool call pairs) to keep uncompressed according to the `keepRecent` setting in the compression configuration, and ensures that tool calls and their corresponding results are not separated during the split.
-     * @returns An object containing the `toCompressedContext` which includes the messages that need to be compressed, and the `reservedContext` which includes the recent messages that should be kept uncompressed.
+     * 根据压缩配置，把当前上下文切分为两部分：一部分需要压缩，另一部分应当保留。该方法根据压缩配置中的 `keepRecent` 设置计算需要保留多少最近的“单元”（块或工具调用对）不参与压缩，并确保切分时不会把工具调用与其对应结果分开。
+     * @returns 一个对象，包含需要压缩的消息 `toCompressedContext`，以及应保持不压缩的最近消息 `reservedContext`。
      */
     protected _splitContextForCompression() {
         let toCompressedContext: Msg[] = [];
         let reservedContext: Msg[] = [];
 
-        // Calculate which messages need to be compressed
-        // keepRecent specifies the number of recent "units" to keep uncompressed
-        // A unit is either: a single block (text/thinking), or a tool_call + tool_result pair
+        // 计算哪些消息需要被压缩
+        // keepRecent 指定需要保持不压缩的最近“单元”数量
+        // 一个单元要么是单个块（text/thinking），要么是一个 tool_call + tool_result 对
         const keepRecent = this.compressionConfig!.keepRecent ?? 0;
 
         const nBlocks = this.context.map(msg => msg.content.length).reduce((a, b) => a + b, 0);
@@ -951,11 +951,11 @@ export class Agent {
                 toCompressedContext.push(msg);
                 currentCompressedBlocks += msg.content.length;
             } else {
-                // The blocks that should be reserved according to the keepRecent count
+                // 根据 keepRecent 数量应当保留的块
                 const reservedBlocks = msg.content.slice(
                     toCompressedBlockNumber - currentCompressedBlocks
                 );
-                // Check if the reserved blocks contain an unpaired tool_call or tool_result
+                // 检查保留的块中是否存在未配对的 tool_call 或 tool_result
                 const unPairedToolResultIds = new Set<string>();
                 for (const block of reservedBlocks) {
                     if (block.type == 'tool_call') {
@@ -966,7 +966,7 @@ export class Agent {
                         }
                     }
                 }
-                // If there are unpaired tool calls, we need to move them to the reserved blocks
+                // 如果存在未配对的工具调用，则需要把它们移到保留的块中
                 let i = toCompressedBlockNumber - currentCompressedBlocks - 1;
                 for (; i >= 0; i--) {
                     const block = msg.content[i];
@@ -975,13 +975,13 @@ export class Agent {
                     }
                     if (unPairedToolResultIds.size === 0) break;
                 }
-                // All contents in this message should be reserved if i
+                // 如果 i 满足该条件，则该消息中的所有内容都应保留
                 if (i <= 0) {
                     reservedContext.push(msg);
                     break;
                 }
 
-                // Slice the message content and push the reserved part to the compressed context
+                // 切分消息内容，并把需要压缩的部分推入压缩上下文
                 const lastMsg = { ...msg };
                 lastMsg.content = msg.content.slice(0, i);
                 toCompressedContext.push(lastMsg);
@@ -990,7 +990,7 @@ export class Agent {
                 reservedMsg.content = msg.content.slice(i);
                 reservedContext.push(reservedMsg);
 
-                // The rest messages should be reserved
+                // 其余消息都应保留
                 reservedContext.push(...this.context.slice(index + 1));
                 break;
             }
@@ -999,24 +999,24 @@ export class Agent {
     }
 
     /**
-     * Compress the agent's memory using the specified compression model (if provided) or the original model.
+     * 使用指定的压缩模型（若提供）或原始模型来压缩 agent 的记忆。
      */
     protected async compressMemoryIfNeeded() {
-        // The tool call and result pair must be kept or removed together
+        // 工具调用与结果对必须一起保留或一起移除
         // Harness 上下文压缩：超过 token 阈值后生成结构化摘要，并保留最近 N 块。
         // 切分时保证 tool_call 与 tool_result 成对保留，避免上下文断裂。
         if (!this.compressionConfig || !this.compressionConfig.enabled) return;
 
         const { toCompressedContext, reservedContext } = this._splitContextForCompression();
 
-        // Compress the toCompressedContext
+        // 压缩 toCompressedContext
         if (
             toCompressedContext.length <= 0 ||
             (toCompressedContext.length === 1 && toCompressedContext.at(0)?.content.length === 1)
         )
             return;
 
-        // Compute if the context exceed the threshold
+        // 计算上下文是否超过阈值
         const messages = [
             createMsg({
                 name: 'system',
@@ -1031,7 +1031,7 @@ export class Agent {
                 role: 'system',
             }),
             ...toCompressedContext,
-            // instructions to compress the context into a summary
+            // 用于把上下文压缩成摘要的指令
             createMsg({
                 name: 'user',
                 content: [
@@ -1057,7 +1057,7 @@ export class Agent {
         console.log(
             `[AGENT ${this.name}] Compressing memory with ${toCompressedContext.length} messages.`
         );
-        // Generate the summary structured content
+        // 生成结构化的摘要内容
         const res = await this.model.callStructured({
             messages: [
                 createMsg({
@@ -1073,7 +1073,7 @@ export class Agent {
                     role: 'system',
                 }),
                 ...toCompressedContext,
-                // instructions to compress the context into a summary
+                // 用于把上下文压缩成摘要的指令
                 createMsg({
                     name: 'user',
                     content: [
@@ -1092,7 +1092,7 @@ export class Agent {
             schema: this.compressionConfig.summarySchema || DEFAULT_SUMMARY_SCHEMA,
         });
 
-        // Make the compression summary
+        // 构造压缩摘要
         let summaryText = '<system-reminder>Here is a summary of your previous work\n';
         for (const [key, value] of Object.entries(res.content)) {
             summaryText += `# ${key}\n${value}\n`;
@@ -1101,7 +1101,7 @@ export class Agent {
 
         console.debug(`[AGENT ${this.name}] Compression summary: ${summaryText}`);
 
-        // Update the context with the compression summary and the reserved recent blocks
+        // 使用压缩摘要和保留的最近块更新上下文
         this.context = reservedContext;
         this.curSummary = summaryText;
     }

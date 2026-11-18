@@ -7,11 +7,11 @@ import { Bash, Edit, Glob, Grep, Read, Toolkit, Write } from '../tool';
 import { ToolChoice, ToolSchema } from '../type';
 
 /**
- * A mock chat model for testing purposes.
+ * 用于测试的模拟聊天模型。
  */
 class MockChatModel extends ChatModelBase {
     /**
-     * Mock implementations
+     * 模拟实现
      * @param _tools
      */
     _formatToolSchemas(_tools: ToolSchema[]): unknown[] {
@@ -19,7 +19,7 @@ class MockChatModel extends ChatModelBase {
     }
     public mockContent: ContentBlock[];
     /**
-     * Initialize a new instance of the MockChatModel class.
+     * 初始化 MockChatModel 类的新实例。
      */
     constructor() {
         super({ modelName: 'mock-model' });
@@ -28,10 +28,10 @@ class MockChatModel extends ChatModelBase {
     }
 
     /**
-     * Simulate calling the API and return a ChatResponse with the mock content.
+     * 模拟调用 API，并返回包含模拟内容的 ChatResponse。
      * @param _modelName
      * @param _options
-     * @returns A promise that resolves to a ChatResponse containing the mock content.
+     * @returns 一个解析为包含模拟内容的 ChatResponse 的 Promise。
      */
     async _callAPI(
         _modelName: string,
@@ -46,7 +46,7 @@ class MockChatModel extends ChatModelBase {
     }
 
     /**
-     * Simulate formatting the tool choice. This method is not implemented in this mock model.
+     * 模拟格式化工具选择。该方法在此模拟模型中未实现。
      * @param _toolChoice
      */
     _formatToolChoice(_toolChoice: ToolChoice): unknown {
@@ -56,7 +56,7 @@ class MockChatModel extends ChatModelBase {
 
 describe('Human-in-the-loop', () => {
     test('user confirm', async () => {
-        // Prepare tools and agent
+        // 准备工具和 agent
         const toolkit = new Toolkit({
             tools: [Bash(), Glob(), Grep(), Read(), Write(), Edit()],
         });
@@ -69,7 +69,7 @@ describe('Human-in-the-loop', () => {
             toolkit,
         });
 
-        // Set mock content to simulate model output with tool calls
+        // 设置模拟内容以模拟带工具调用的模型输出
         model.mockContent = [
             {
                 type: 'tool_call',
@@ -89,7 +89,7 @@ describe('Human-in-the-loop', () => {
             },
         ];
 
-        // Record the last event emitted by the agent
+        // 记录 agent 最后发出的事件
         let lastEvent: AgentEvent | null = null;
         for await (const event of agent.replyStream({})) {
             lastEvent = event;
@@ -121,7 +121,7 @@ describe('Human-in-the-loop', () => {
             curIter: 0,
         });
 
-        // Ensure the agent context state
+        // 确保 agent 上下文状态
         expect(agent.context).toEqual([
             {
                 content: [
@@ -155,7 +155,7 @@ describe('Human-in-the-loop', () => {
             },
         ]);
 
-        // Simulate user confirmation result for the first tool call
+        // 模拟用户对第一个工具调用的确认结果
         for await (const event of agent.replyStream({
             event: {
                 id: 'xxx',
@@ -180,7 +180,7 @@ describe('Human-in-the-loop', () => {
             lastEvent = event;
         }
 
-        // Verify the agent still yields user confirmation for the second tool call
+        // 验证 agent 对第二个工具调用仍返回用户确认
         expect(lastEvent).toMatchObject({
             type: EventType.REQUIRE_USER_CONFIRM,
             reply_id: expect.any(String),
@@ -195,7 +195,7 @@ describe('Human-in-the-loop', () => {
             ],
         });
 
-        // Verify the current agent context
+        // 验证当前 agent 上下文
         expect(agent.context.map(msg => msg.content)).toEqual([
             [
                 {
@@ -241,7 +241,7 @@ describe('Human-in-the-loop', () => {
             },
         ];
 
-        // Reject the second tool call by simulating user confirmation result
+        // 通过模拟用户确认结果拒绝第二个工具调用
         const res = agent.replyStream({
             event: {
                 id: 'xxx',
@@ -274,7 +274,7 @@ describe('Human-in-the-loop', () => {
             lastEvent = value;
         }
 
-        // Verify the lastEvent
+        // 验证 lastEvent
         expect(lastEvent).toMatchObject({
             id: expect.any(String),
             type: EventType.REPLY_END,
@@ -282,7 +282,7 @@ describe('Human-in-the-loop', () => {
             reply_id: agent.replyId,
         });
 
-        // Verify the final agent reply msg
+        // 验证最终的 agent 回复消息
         expect(replyMsg).toMatchObject({
             content: [
                 {
@@ -300,7 +300,7 @@ describe('Human-in-the-loop', () => {
     });
 
     test('external execution', async () => {
-        // Prepare tools and agent with external execution tools
+        // 准备带有外部执行工具的工具和 agent
         const externalTool1 = {
             name: 'ExternalTool1',
             description: 'A tool that requires external execution',

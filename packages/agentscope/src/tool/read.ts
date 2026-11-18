@@ -6,10 +6,10 @@ import { z } from 'zod';
 import { createToolResponse, ToolResponse } from './response';
 
 /**
- * Tool for reading files from the local filesystem.
- * Returns file contents with line numbers in cat -n format.
+ * 用于从本地文件系统读取文件的工具。
+ * 以 cat -n 格式返回带行号的文件内容。
  *
- * @returns A Tool object for reading files, with a call method that performs the read operation and returns the formatted contents or a warning if the file is empty.
+ * @returns 用于读取文件的 Tool 对象，其 call 方法负责执行读取操作并返回格式化后的内容，若文件为空则返回警告。
  */
 export function Read() {
     return {
@@ -48,14 +48,14 @@ Usage:
         requireUserConfirm: true,
 
         /**
-         * Reads a file and returns its contents with line numbers.
+         * 读取文件并返回带行号的内容。
          *
-         * @param root0 - The parameters object
-         * @param root0.file_path - Absolute path to the file to read
-         * @param root0.offset - Line number to start reading from (1-based)
-         * @param root0.limit - Maximum number of lines to read (capped at 2000)
-         * @returns The file contents formatted with line numbers, or a warning if the file is empty
-         * @throws If the path is not absolute, the file does not exist, or the path is a directory
+         * @param root0 - 参数对象
+         * @param root0.file_path - 要读取的文件的绝对路径
+         * @param root0.offset - 开始读取的行号（从 1 开始）
+         * @param root0.limit - 最大读取行数（上限为 2000）
+         * @returns 格式化为带行号的文件内容，若文件为空则返回警告
+         * @throws 若路径不是绝对路径、文件不存在，或路径是目录时抛出异常
          */
         call({
             file_path,

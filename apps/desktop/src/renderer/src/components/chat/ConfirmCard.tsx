@@ -8,9 +8,9 @@ import { useTranslation } from '@/i18n/useI18n';
 import { cn } from '@/lib/utils';
 
 /**
- * Returns a human-readable label for a tool name.
- * @param name - The tool name.
- * @returns A display string for the tool.
+ * 返回工具名称的易读标签。
+ * @param name - 工具名称。
+ * @returns 该工具的展示字符串。
  */
 function renderToolName(name: string) {
     switch (name.toLowerCase()) {
@@ -24,10 +24,10 @@ function renderToolName(name: string) {
 }
 
 /**
- * Renders a formatted display of tool input based on tool type.
- * @param name - The tool name.
- * @param input - The raw input string (JSON).
- * @returns A React element or raw input string.
+ * 根据工具类型渲染格式化后的工具输入。
+ * @param name - 工具名称。
+ * @param input - 原始输入字符串（JSON）。
+ * @returns 一个 React 元素或原始输入字符串。
  */
 function renderToolInput(name: string, input: string) {
     try {
@@ -58,11 +58,11 @@ function renderToolInput(name: string, input: string) {
 }
 
 /**
- * Card component for user confirmation of a pending tool call.
- * @param root0 - Component props.
- * @param root0.toolCall - The tool call block awaiting confirmation.
- * @param root0.onUserConfirm - Callback invoked with the user's decision.
- * @returns A confirmation card element.
+ * 用于用户确认待处理工具调用的卡片组件。
+ * @param root0 - 组件 props。
+ * @param root0.toolCall - 等待确认的工具调用块。
+ * @param root0.onUserConfirm - 携带用户决定的回调。
+ * @returns 一个确认卡片元素。
  */
 // 审批 UI：展示待确认的工具调用，用户选择后回传 USER_CONFIRM_RESULT。
 export function ConfirmCard({

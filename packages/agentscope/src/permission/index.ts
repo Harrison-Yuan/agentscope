@@ -1,28 +1,28 @@
 /**
- * The mode of permission.
+ * 权限模式。
  *
- * Permission modes control how the system handles tool execution requests.
- * Different modes are suitable for different scenarios:
+ * 权限模式控制系统如何处理工具执行请求。
+ * 不同模式适用于不同场景：
  *
- * - `DEFAULT`: Every operation asks for permission unless an allow rule
- *   matches, OR the tool's `checkPermissions` explicitly returns `ALLOW`
- *   for the invocation (currently only `Bash` auto-allows recognized
- *   read-only commands such as `ls`/`git status`). `Read`/`Glob`/`Grep`
- *   return `PASSTHROUGH` and fall through to the default `ASK` unless an
- *   allow rule matches.
- * - `ACCEPT_EDITS`: Auto-allow file writes / reads in working directories
- *   and filesystem bash commands (`mkdir`, `rm`, `mv`, `cp`, ...) when all
- *   target paths resolve inside a working directory. Other operations
- *   follow normal rules.
- * - `EXPLORE`: Read-only mode. Allows read-only tools (`Read`/`Grep`/
- *   `Glob`) and read-only bash commands (e.g. `ls`, `git status`); denies
- *   any modification tool / command. User-configured `DENY` or `ASK`
- *   rules take precedence over the read-only auto-allow.
- * - `BYPASS`: Skip all permission checks except explicit user-configured
- *   `DENY` / `ASK` rules and tool `DENY`. Safety `ASK`s from tools are
- *   NOT enforced. Use deny rules to protect specific paths.
- * - `DONT_ASK`: Convert every `ASK` (including safety `ASK`s and `ASK`-
- *   rule hits) to `DENY`. Safe-by-default for unattended execution.
+ * - `DEFAULT`：除非匹配到 allow 规则，或工具的 `checkPermissions`
+ *   对该次调用明确返回 `ALLOW`，否则每个操作都会请求授权
+ *   （当前只有 `Bash` 会自动放行可识别的只读命令，
+ *   如 `ls`/`git status`）。`Read`/`Glob`/`Grep` 会返回
+ *   `PASSTHROUGH`，并在未匹配 allow 规则时
+ *   回落到默认的 `ASK`。
+ * - `ACCEPT_EDITS`：当所有目标路径都解析到工作目录内时，
+ *   自动放行工作目录中的文件读写以及文件系统 bash 命令
+ *   （`mkdir`、`rm`、`mv`、`cp` 等）。其他操作
+ *   遵循常规规则。
+ * - `EXPLORE`：只读模式。允许只读工具（`Read`/`Grep`/
+ *   `Glob`）和只读 bash 命令（如 `ls`、`git status`）；拒绝
+ *   任何修改类工具/命令。用户配置的 `DENY` 或 `ASK`
+ *   规则优先于只读自动放行。
+ * - `BYPASS`：跳过所有权限检查，但用户显式配置的
+ *   `DENY` / `ASK` 规则和工具 `DENY` 除外。工具发出的安全 `ASK`
+ *   不会被强制执行。请使用 deny 规则保护特定路径。
+ * - `DONT_ASK`：把每个 `ASK`（包括安全 `ASK` 和匹配到
+ *   `ASK` 规则的情况）都转换为 `DENY`。默认即安全，适合无人值守执行。
  */
 // 注意：这里只有类型/模式定义，Agent 循环暂未消费；当前生效的是工具上的 requireUserConfirm。
 export enum PermissionMode {
@@ -34,13 +34,13 @@ export enum PermissionMode {
 }
 
 /**
- * The behavior of permission.
+ * 权限行为。
  *
- * - `ALLOW`: Allow the operation.
- * - `DENY`: Deny the operation.
- * - `ASK`: Ask the user for permission.
- * - `PASSTHROUGH`: Let the permission engine continue with rule matching
- *   (used by tools to defer decision to the engine).
+ * - `ALLOW`：允许该操作。
+ * - `DENY`：拒绝该操作。
+ * - `ASK`：向用户请求授权。
+ * - `PASSTHROUGH`：让权限引擎继续进行规则匹配
+ *   （工具借此把决定权交给引擎）。
  */
 export enum PermissionBehavior {
     ALLOW = 'allow',
@@ -50,75 +50,75 @@ export enum PermissionBehavior {
 }
 
 /**
- * Permission rule for tool usage.
+ * 工具使用的权限规则。
  *
- * A permission rule defines whether a specific tool or tool operation
- * should be allowed, denied, or require user confirmation. The
- * `rule_content` field has different semantics depending on the
- * `tool_name`:
+ * 权限规则定义某个特定工具或工具操作应当被允许、拒绝，
+ * 还是需要用户确认。`rule_content` 字段的语义
+ * 取决于 `tool_name`：
  *
- * - For `Bash`: `rule_content` is a substring pattern matched against the
- *   command. Example: `rule_content="npm install"` matches
- *   `"npm install express"`.
- * - For `Write`/`Read`: `rule_content` is a glob pattern matched against
- *   file paths. Example: `rule_content="src/**"` matches `"src/main.py"`.
- * - For other tools: `rule_content` is a tool-specific filter pattern.
+ * - 对于 `Bash`：`rule_content` 是匹配命令的
+ *   子串模式。例如：`rule_content="npm install"` 可匹配
+ *   `"npm install express"`。
+ * - 对于 `Write`/`Read`：`rule_content` 是匹配文件路径的
+ *   glob 模式。例如：`rule_content="src/**"` 可匹配
+ *   `"src/main.py"`。
+ * - 对于其他工具：`rule_content` 是工具特定的过滤模式。
  */
 export interface PermissionRule {
-    /** The name of the tool this rule applies to (e.g. "Bash", "Write", "Read"). */
+    /** 该规则适用的工具名称（例如 "Bash"、"Write"、"Read"）。 */
     tool_name: string;
-    /** Optional filter pattern — semantics depend on `tool_name`. */
+    /** 可选的过滤模式——语义取决于 `tool_name`。 */
     rule_content: string | null;
-    /** The permission behavior ("allow", "deny", or "ask"). */
+    /** 权限行为（"allow"、"deny" 或 "ask"）。 */
     behavior: PermissionBehavior;
-    /** Where this rule originated from (e.g. "userSettings", "projectSettings"). */
+    /** 该规则的来源（例如 "userSettings"、"projectSettings"）。 */
     source: string;
 }
 
 /**
- * An additional directory included in permission scope.
+ * 纳入权限范围的额外目录。
  *
- * Working directories are used to determine which file paths should be
- * automatically allowed in `ACCEPT_EDITS` mode.
+ * 工作目录用于确定在 `ACCEPT_EDITS` 模式下
+ * 哪些文件路径应被自动允许。
  */
 export interface AdditionalWorkingDirectory {
-    /** Absolute path to the directory. */
+    /** 该目录的绝对路径。 */
     path: string;
     /**
-     * Where this directory permission originated from
-     * (e.g. 'userSettings', 'session').
+     * 该目录权限的来源
+     * （例如 'userSettings'、'session'）。
      */
     source: string;
 }
 
 /**
- * Context for permission checking.
+ * 权限检查的上下文。
  *
- * Contains the permission mode, working directories, and all configured
- * permission rules organized by behavior type (allow, deny, ask).
+ * 包含权限模式、工作目录，以及按行为类型（allow、deny、ask）
+ * 组织的所有已配置权限规则。
  *
- * Rule maps are keyed by tool name; multiple rules per tool are supported
- * via array values.
+ * 规则映射以工具名称为键；每个工具支持
+ * 通过数组值配置多条规则。
  */
 export interface PermissionContext {
-    /** The current permission mode. Defaults to {@link PermissionMode.DEFAULT}. */
+    /** 当前权限模式。默认为 {@link PermissionMode.DEFAULT}。 */
     mode: PermissionMode;
-    /** Additional directories allowed for file operations, keyed by path. */
+    /** 允许进行文件操作的额外目录，以路径为键。 */
     working_directories: Record<string, AdditionalWorkingDirectory>;
-    /** Rules that allow tool execution, keyed by tool name. */
+    /** 允许执行工具的规则，以工具名称为键。 */
     allow_rules: Record<string, PermissionRule[]>;
-    /** Rules that deny tool execution, keyed by tool name. */
+    /** 拒绝执行工具的规则，以工具名称为键。 */
     deny_rules: Record<string, PermissionRule[]>;
-    /** Rules that require user confirmation, keyed by tool name. */
+    /** 需要用户确认的规则，以工具名称为键。 */
     ask_rules: Record<string, PermissionRule[]>;
 }
 
 /**
- * Factory for an empty {@link PermissionContext} with sensible defaults.
- * Mirrors the Pydantic `default_factory` semantics on the Python side.
+ * 创建带合理默认值的空 {@link PermissionContext} 的工厂函数。
+ * 与 Python 侧 Pydantic 的 `default_factory` 语义保持一致。
  *
- * @param mode - Initial permission mode. Defaults to {@link PermissionMode.DEFAULT}.
- * @returns A fresh `PermissionContext` with empty rule / working-directory maps.
+ * @param mode - 初始权限模式。默认为 {@link PermissionMode.DEFAULT}。
+ * @returns 一个全新的 `PermissionContext`，其规则 / 工作目录映射均为空。
  */
 export function createPermissionContext(
     mode: PermissionMode = PermissionMode.DEFAULT
@@ -133,70 +133,70 @@ export function createPermissionContext(
 }
 
 /**
- * Decision result from permission checking.
+ * 权限检查的决策结果。
  *
- * Represents the outcome of a permission check, including whether the
- * action should be allowed, denied, or require user confirmation.
+ * 表示一次权限检查的结果，包括该操作应被允许、拒绝，
+ * 还是需要用户确认。
  */
 export interface PermissionDecision {
-    /** The permission behavior decision. */
+    /** 权限行为决策。 */
     behavior: PermissionBehavior;
-    /** Human-readable message describing the decision. */
+    /** 描述该决策的人类可读消息。 */
     message: string;
     /**
-     * Optional explanation for why this decision was made.
+     * 对该决策原因的可选说明。
      *
-     * Accepts `null` so JSON payloads coming from the Python side
-     * (which serialises `None` as `null`) round-trip cleanly.
+     * 接受 `null`，以便来自 Python 侧的 JSON 负载
+     * （其把 `None` 序列化为 `null`）能干净地往返。
      */
     decision_reason?: string | null;
     /**
-     * Optional modified input data (e.g. sanitized paths).
+     * 可选的已修改输入数据（例如清理后的路径）。
      *
-     * Accepts `null` for the same Python `None` → JSON `null` reason
-     * as {@link decision_reason}.
+     * 接受 `null`，原因同 {@link decision_reason}
+     * 中的 Python `None` → JSON `null`。
      */
     updated_input?: Record<string, unknown> | null;
     /**
-     * Optional list of suggested permission rules for the user to apply.
+     * 可选的建议权限规则列表，供用户应用。
      *
-     * Accepts `null` for the same Python `None` → JSON `null` reason
-     * as {@link decision_reason}.
+     * 接受 `null`，原因同 {@link decision_reason}
+     * 中的 Python `None` → JSON `null`。
      */
     suggested_rules?: PermissionRule[] | null;
     /**
-     * Whether this decision is immune to being silenced by allow rules
-     * ("bypass-immune"). Only meaningful when `behavior` is
-     * {@link PermissionBehavior.ASK}.
+     * 该决策是否不受 allow 规则抑制
+     * （"bypass-immune"）。仅在 `behavior` 为
+     * {@link PermissionBehavior.ASK} 时有意义。
      *
-     * A tool sets this to `true` to signal that the operation is dangerous
-     * enough that **no allow rule** may convert the `ASK` into an `ALLOW`
-     * — the user must explicitly confirm in-the-moment. In
-     * {@link PermissionMode.DONT_ASK} where no user is available, a
-     * bypass-immune `ASK` is converted to `DENY` rather than silently
-     * allowed.
+     * 工具将其设为 `true` 表示该操作足够危险，
+     * **任何 allow 规则**都不得把 `ASK` 转换为 `ALLOW`
+     * ——用户必须在当下显式确认。在
+     * {@link PermissionMode.DONT_ASK} 且没有用户可用时，
+     * bypass-immune 的 `ASK` 会被转换为 `DENY`，
+     * 而不是被静默允许。
      *
-     * Per-mode handling of a `bypass_immune=true` `ASK`:
-     * - `DEFAULT` / `ACCEPT_EDITS`: honored — allow rules cannot override.
-     * - `EXPLORE`: not applicable (engine resolves EXPLORE via read-only
-     *   check and does not invoke `checkPermissions`).
-     * - `BYPASS`: intentionally ignored — BYPASS's contract is "the user
-     *   has opted out of safety prompts; only deny / ask rules remain as
-     *   guardrails." Use deny rules in BYPASS to enforce specific
-     *   protections.
-     * - `DONT_ASK`: converted to `DENY` (no user available).
+     * `bypass_immune=true` 的 `ASK` 在各模式下的处理：
+     * - `DEFAULT` / `ACCEPT_EDITS`：生效——allow 规则无法覆盖。
+     * - `EXPLORE`：不适用（引擎通过只读检查
+     *   解析 EXPLORE，不会调用 `checkPermissions`）。
+     * - `BYPASS`：有意忽略——BYPASS 的约定是“用户已选择
+     *   关闭安全提示；只有 deny / ask 规则作为防护栏。”
+     *   在 BYPASS 中使用 deny 规则来强制执行具体的
+     *   保护措施。
+     * - `DONT_ASK`：转换为 `DENY`（没有用户可用）。
      *
-     * Default is `false`: a regular `ASK` that may be overridden by an
-     * allow rule in `DEFAULT` / `ACCEPT_EDITS`, and is silently allowed by
-     * `BYPASS`'s fallback. Tools should set this only for genuine safety
-     * checks (e.g. writes to dangerous paths, `rm -rf /`, command-
-     * injection patterns) — not for "I'd prefer user input" cases.
+     * 默认为 `false`：即普通 `ASK`，在 `DEFAULT` / `ACCEPT_EDITS`
+     * 中可被 allow 规则覆盖，并会被 `BYPASS` 的
+     * 回退逻辑静默允许。工具只应在真正的安全检查中
+     * 设置它（例如写入危险路径、`rm -rf /`、命令注入
+     * 模式）——而不是“我更喜欢用户输入”这类情况。
      *
-     * Note: this field is internal metadata for the permission engine.
-     * Callers handling the decision (agent loop, HITL backend, UI) treat a
-     * bypass-immune `ASK` the same as a regular `ASK` — both prompt the
-     * user. The distinction only governs whether engine-level rules /
-     * modes may override it before reaching the caller.
+     * 注意：该字段是权限引擎的内部元数据。
+     * 处理决策的调用方（Agent 循环、HITL 后端、UI）会把
+     * bypass-immune 的 `ASK` 视为普通 `ASK`——两者都会提示
+     * 用户。该区别只决定引擎级规则 / 模式
+     * 是否能在到达调用方之前覆盖它。
      */
     bypass_immune?: boolean;
 }

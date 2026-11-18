@@ -305,7 +305,7 @@ describe('Toolkit', () => {
             state: 'pending',
         });
 
-        // Verify intermediate chunks
+        // 验证中间分块
         const chunks = [];
         let finalRes;
         while (true) {
@@ -346,7 +346,7 @@ describe('Toolkit', () => {
         ]);
         expect(chunks[2].isLast).toBe(true);
 
-        // Verify final accumulated result
+        // 验证最终累积结果
         expect(finalRes!.content).toEqual([
             {
                 id: expect.any(String),
@@ -394,7 +394,7 @@ describe('Toolkit', () => {
             state: 'pending',
         });
 
-        // Verify intermediate chunks
+        // 验证中间分块
         const chunks = [];
         let finalRes;
         while (true) {
@@ -426,7 +426,7 @@ describe('Toolkit', () => {
         ]);
         expect(chunks[1].isLast).toBe(true);
 
-        // Verify final accumulated result
+        // 验证最终累积结果
         expect(finalRes!.content).toEqual([
             {
                 id: expect.any(String),
@@ -666,16 +666,16 @@ describe('Toolkit', () => {
     });
 
     test('Skill tool with SKILL.md file', async () => {
-        // Setup: Create a temporary skill directory and SKILL.md file
+        // 准备：创建一个临时技能目录和 SKILL.md 文件
         const testSkillDir = path.join(__dirname, '__test_skill__');
         const skillMdPath = path.join(testSkillDir, 'SKILL.md');
 
-        // Create the skill directory
+        // 创建技能目录
         if (!fs.existsSync(testSkillDir)) {
             fs.mkdirSync(testSkillDir, { recursive: true });
         }
 
-        // Write SKILL.md with YAML front matter
+        // 写入带 YAML front matter 的 SKILL.md
         const skillContent = `---
 name: test_skill
 description: A test skill for unit testing
@@ -692,7 +692,7 @@ This skill demonstrates how to use the Skill tool to retrieve skill content.`;
         fs.writeFileSync(skillMdPath, skillContent, 'utf-8');
 
         try {
-            // Initialize toolkit with builtInSkillTool enabled and register the test skill
+            // 初始化启用了 builtInSkillTool 的 toolkit 并注册测试技能
             const toolkit = new Toolkit({
                 builtInSkillTool: true,
                 skills: [testSkillDir],

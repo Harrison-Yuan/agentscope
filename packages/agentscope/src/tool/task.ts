@@ -5,16 +5,16 @@ import type { Task } from '../state';
 
 export type { Task, TaskContext } from '../state';
 
-/** Task state — mirrors Python's ``Literal["pending", "in_progress", "completed"]``. */
+/** 任务状态 —— 对应 Python 中的 ``Literal["pending", "in_progress", "completed"]``。 */
 export type TaskState = Task['state'];
 
-// Module-level storage
+// 模块级存储
 // 这是 todo 任务列表，不是 Subagent；模块级 Map 只保存任务状态。
 const taskStore = new Map<string, Task>();
 
 /**
- * Generate the next sequential task ID based on existing tasks.
- * @returns A unique task ID as a string (e.g. "1", "2", "3").
+ * 根据已有任务生成下一个顺序任务 ID。
+ * @returns 作为字符串的唯一任务 ID（例如 "1"、"2"、"3"）。
  */
 function generateId(): string {
     let maxNumeric = 0;
@@ -26,7 +26,7 @@ function generateId(): string {
 }
 
 /**
- * Reset task store for testing purposes.
+ * 重置任务存储，仅供测试使用。
  * @internal
  */
 export function _resetTaskStore(): void {
@@ -34,8 +34,8 @@ export function _resetTaskStore(): void {
 }
 
 /**
- * Tool for creating tasks.
- * @returns A Tool object for creating tasks.
+ * 用于创建任务的工具。
+ * @returns 用于创建任务的 Tool 对象。
  */
 export function TaskCreate() {
     return {
@@ -112,8 +112,8 @@ All tasks are created with state 'pending'.`,
 }
 
 /**
- * Tool for updating tasks.
- * @returns A Tool object for updating tasks.
+ * 用于更新任务的工具。
+ * @returns 用于更新任务的 Tool 对象。
  */
 export function TaskUpdate() {
     return {
@@ -176,7 +176,7 @@ export function TaskUpdate() {
                 throw new Error(`Task not found: ${taskId}`);
             }
 
-            // Validate dependencies exist
+            // 校验依赖存在
             if (addBlocks) {
                 for (const depId of addBlocks) {
                     if (!taskStore.has(depId)) {
@@ -192,12 +192,12 @@ export function TaskUpdate() {
                 }
             }
 
-            // Update fields
+            // 更新字段
             if (subject !== undefined) task.subject = subject;
             if (description !== undefined) task.description = description;
             if (owner !== undefined) task.owner = owner;
 
-            // Merge metadata
+            // 合并 metadata
             if (metadata !== undefined) {
                 for (const [key, value] of Object.entries(metadata)) {
                     if (value === null) {
@@ -208,7 +208,7 @@ export function TaskUpdate() {
                 }
             }
 
-            // Add dependencies with deduplication
+            // 添加依赖并去重
             if (addBlocks) {
                 task.blocks = [...new Set([...task.blocks, ...addBlocks])];
             }
@@ -216,7 +216,7 @@ export function TaskUpdate() {
                 task.blocked_by = [...new Set([...task.blocked_by, ...addBlockedBy])];
             }
 
-            // Handle status change
+            // 处理状态变更
             if (status !== undefined) {
                 if (status === 'deleted') {
                     taskStore.delete(taskId);
@@ -251,8 +251,8 @@ export function TaskUpdate() {
 }
 
 /**
- * Tool for retrieving a single task.
- * @returns A Tool object for retrieving a task by ID.
+ * 用于获取单个任务的工具。
+ * @returns 用于按 ID 获取任务的 Tool 对象。
  */
 export function TaskGet() {
     return {
@@ -309,8 +309,8 @@ export function TaskGet() {
 }
 
 /**
- * Tool for listing all active tasks.
- * @returns A Tool object for listing all active tasks.
+ * 用于列出所有活动任务的工具。
+ * @returns 用于列出所有活动任务的 Tool 对象。
  */
 export function TaskList() {
     return {

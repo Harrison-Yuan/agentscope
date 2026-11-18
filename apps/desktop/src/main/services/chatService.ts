@@ -58,12 +58,12 @@ export function registerChatHandlers(ipcMain: IpcMain, webContents: WebContents)
     });
 
     ipcMain.handle('chat:addMessage', (_event, sessionId: string, message: Msg) => {
-        // IPC transmission loses object methods, need to recreate Msg object
+        // IPC 传输会丢失对象方法，需要重新创建 Msg 对象
         const msg = createMsg(message);
         return service.addMessage(sessionId, msg);
     });
 
-    // User sends message → store user message → call agent → stream push AgentEvent → store assistant message
+    // 用户发送消息 → 存储用户消息 → 调用 agent → 流式推送 AgentEvent → 存储助手消息
     ipcMain.handle(
         'chat:sendMessage',
         async (
@@ -75,16 +75,16 @@ export function registerChatHandlers(ipcMain: IpcMain, webContents: WebContents)
         ) => {
             const config = getConfig();
 
-            // Get agent configuration
+            // 获取 agent 配置
             const agentConfig = config.agents?.[agentKey];
             if (!agentConfig) {
                 throw new Error(`Agent configuration not found: ${agentKey}`);
             }
 
-            // Get model configuration from agent's modelKey
+            // 根据 agent 的 modelKey 获取模型配置
             let modelConfig = config.models?.[agentConfig.modelKey];
 
-            // Fallback: if the configured model doesn't exist, try to use the first available model
+            // 兜底：若配置的模型不存在，则尝试使用第一个可用模型
             if (!modelConfig && Object.keys(config.models || {}).length > 0) {
                 const firstModelKey = Object.keys(config.models)[0];
                 modelConfig = config.models[firstModelKey];
@@ -106,24 +106,24 @@ export function registerChatHandlers(ipcMain: IpcMain, webContents: WebContents)
                 offloadPathSegments: [PATHS.offloadDir(sessionId)],
             });
 
-            // tool
+            // 工具
             const toolkit = await getToolkit(sessionId, agentKey);
 
-            // Build system prompt
+            // 构建系统提示词
             // 系统提示词来源：内置 agent 硬编码，自定义 agent 用配置；这里没有 AGENTS.md 加载逻辑。
             let sysPrompt: string;
             if (agentKey === 'friday') {
-                // Friday is the only builtin agent with a fixed system prompt
+                // Friday 是唯一具有固定系统提示词的内置 agent
                 sysPrompt = `You're a helpful assistant named friday.
 
 
 `;
             } else {
-                // Custom agents use their configured system prompt
+                // 自定义 agent 使用其配置的系统提示词
                 sysPrompt = agentConfig.systemPrompt || '';
             }
 
-            // Append user instruction if provided
+            // 若提供了用户指令则追加到系统提示词
             if (agentConfig.instruction) {
                 sysPrompt += `\n\n${agentConfig.instruction}`;
             }
@@ -142,7 +142,7 @@ export function registerChatHandlers(ipcMain: IpcMain, webContents: WebContents)
                 toolkit,
             };
 
-            // 3. Call agent, each AgentEvent is pushed to agent:event:{sessionId}
+            // 3. 调用 agent，每个 AgentEvent 推送到 agent:event:{sessionId}
             runningSessions.add(sessionId);
             try {
                 await runAgent(

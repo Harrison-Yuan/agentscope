@@ -67,11 +67,11 @@ export interface ReplyEndEvent extends EventBase {
     type: EventType.REPLY_END;
     session_id: string;
     reply_id: string;
-    /** The reason this reply finished. */
+    /** 本次回复结束的原因。 */
     finished_reason: ReplyFinishedReason;
     /**
-     * Structured error info, populated only when
-     * `finished_reason === ReplyFinishedReason.ERROR`.
+     * 结构化错误信息，仅在
+     * `finished_reason === ReplyFinishedReason.ERROR` 时填充。
      */
     error?: ErrorInfo | null;
 }
@@ -151,20 +151,20 @@ export interface ThinkingBlockEndEvent extends EventBase {
 }
 
 /**
- * One-shot hint block event.
+ * 一次性提示块事件。
  *
- * Unlike text/thinking blocks, hint blocks are not streamed — the
- * full content is available at creation time (team messages,
- * background tool results, user interruptions, …). A single event
- * carries the complete {@link HintBlock} content.
+ * 与文本/思考块不同，提示块不会流式输出——完整内容在
+ * 创建时即可用（团队消息、后台工具结果、用户打断等）。
+ * 单个事件即携带完整的 {@link HintBlock}
+ * 内容。
  */
 export interface HintBlockEvent extends EventBase {
     type: EventType.HINT_BLOCK;
     reply_id: string;
     block_id: string;
-    /** Sender or origin of this hint (e.g. `"alice"`, `"system"`). */
+    /** 该提示的发送者或来源（例如 `"alice"`、`"system"`）。 */
     source?: string | null;
-    /** Complete hint content — `string` or `(TextBlock | DataBlock)[]`. */
+    /** 完整的提示内容——`string` 或 `(TextBlock | DataBlock)[]`。 */
     hint: string | (TextBlock | DataBlock)[];
 }
 
@@ -206,7 +206,7 @@ export interface ToolResultDataDeltaEvent extends EventBase {
     type: EventType.TOOL_RESULT_DATA_DELTA;
     reply_id: string;
     tool_call_id: string;
-    /** Auto-generated in {@link appendEvent} when not provided. */
+    /** 未提供时由 {@link appendEvent} 自动生成。 */
     block_id?: string;
     media_type: string;
     data?: string;
@@ -258,8 +258,8 @@ export interface ExternalExecutionResultEvent extends EventBase {
 }
 
 /**
- * A custom event carrying an arbitrary name and payload.
- * Mirrors the Python `agentscope.event.CustomEvent` model.
+ * 携带任意名称和负载的自定义事件。
+ * 与 Python 的 `agentscope.event.CustomEvent` 模型保持一致。
  */
 export interface CustomEvent extends EventBase {
     type: EventType.CUSTOM;
@@ -268,7 +268,7 @@ export interface CustomEvent extends EventBase {
 }
 
 export type AgentEvent =
-    // The control events for the whole run
+    // 整个运行过程的控制事件
     | ReplyStartEvent
     | ReplyEndEvent
     | ExceedMaxItersEvent
@@ -276,7 +276,7 @@ export type AgentEvent =
     | RequireExternalExecutionEvent
     | ModelCallStartEvent
     | ModelCallEndEvent
-    // The data events for different block types
+    // 不同块类型的数据事件
     | TextBlockStartEvent
     | TextBlockDeltaEvent
     | TextBlockEndEvent
@@ -294,8 +294,8 @@ export type AgentEvent =
     | ToolResultTextDeltaEvent
     | ToolResultDataDeltaEvent
     | ToolResultEndEvent
-    // The events from the external execution or user confirmation
+    // 来自外部执行或用户确认的事件
     | UserConfirmResultEvent
     | ExternalExecutionResultEvent
-    // Custom events
+    // 自定义事件
     | CustomEvent;

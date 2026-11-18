@@ -9,17 +9,17 @@ import { useState, useEffect, useRef, startTransition } from 'react';
 import { applyAgentEvent } from './agent-event-handler';
 
 /**
- * A custom hook for managing chat messages within a session.
+ * 用于管理会话内聊天消息的自定义 hook。
  *
- * @param sessionId - The ID of the current chat session.
- * @returns An object containing messages, sending state, and message sending function.
+ * @param sessionId - 当前聊天会话的 ID。
+ * @returns 包含消息、发送状态和消息发送函数的对象。
  */
 export function useMessages(sessionId: string | null) {
     const [messages, setMessages] = useState<Msg[]>([]);
     const [sending, setSending] = useState(false);
     const prevSessionIdRef = useRef<string | null>(null);
 
-    // Load historical messages and check running state when switching sessions
+    // 切换会话时加载历史消息并检查运行状态
     useEffect(() => {
         if (!sessionId) {
             startTransition(() => {
@@ -30,8 +30,8 @@ export function useMessages(sessionId: string | null) {
             return;
         }
 
-        // Clear messages only when switching from one session to another.
-        // If switching from null to a value (creating a new session), do not clear messages to preserve optimistic updates.
+        // 仅在一个会话切换到另一个会话时清空消息。
+        // 若从 null 切换到某个值（创建新会话），则不清空消息，以保留乐观更新。
         if (prevSessionIdRef.current !== null && prevSessionIdRef.current !== sessionId) {
             startTransition(() => {
                 setMessages([]);
@@ -45,7 +45,7 @@ export function useMessages(sessionId: string | null) {
         ]).then(([msgs, running]) => {
             startTransition(() => {
                 setMessages(prev => {
-                    // Positive update
+                    // 乐观更新
                     const msgIds = new Set(msgs.map(m => m.id));
                     const localMsgs = prev.filter(m => !msgIds.has(m.id));
                     return [...msgs, ...localMsgs];
@@ -55,7 +55,7 @@ export function useMessages(sessionId: string | null) {
         });
     }, [sessionId]);
 
-    // Subscribe to agent streaming events by sessionId, and automatically unsubscribe when switching sessions
+    // 按 sessionId 订阅 agent 流式事件，切换会话时自动取消订阅
     useEffect(() => {
         if (!sessionId) return;
         return window.api.agent.subscribe(sessionId, (event: AgentEvent) => {
@@ -72,7 +72,7 @@ export function useMessages(sessionId: string | null) {
             name: 'user',
             content,
         });
-        // Positive update for user message
+        // 用户消息的乐观更新
         setMessages(prev => [...prev, message]);
         await window.api.chat.sendMessage(sessionId, agentKey, message);
     };
