@@ -75,6 +75,7 @@ function createWindow(): BrowserWindow {
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
+            // 渲染进程沙箱关闭；这是 UI 层设置，不等于 Agent 工具执行沙箱。
             sandbox: false,
         },
     });

@@ -24,6 +24,7 @@
  * - `DONT_ASK`: Convert every `ASK` (including safety `ASK`s and `ASK`-
  *   rule hits) to `DENY`. Safe-by-default for unattended execution.
  */
+// 注意：这里只有类型/模式定义，Agent 循环暂未消费；当前生效的是工具上的 requireUserConfirm。
 export enum PermissionMode {
     DEFAULT = 'default',
     ACCEPT_EDITS = 'accept_edits',

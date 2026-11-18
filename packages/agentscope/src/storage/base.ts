@@ -45,6 +45,7 @@ export abstract class StorageBase {
      * @param _options
      * @returns The identifier or URL of the offloaded context, or undefined if offloading is not implemented or not needed
      */
+    // 上下文外置接口：设计上用于把压缩内容放到外部存储，支持后续检索；当前 Agent 循环未调用。
     async offloadContext(_options: { msgs: Msg[] }): Promise<string | undefined> {
         console.log('Offloading context is not implemented for this storage. Skipping offloading.');
         return undefined;

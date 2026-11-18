@@ -117,6 +117,11 @@ export interface AgentOptions {
 
 /**
  * The unified agent class in AgentScope library.
+ *
+ * Harness 核心：把模型输出的概率 token 变成可执行、可恢复、可验证的过程。
+ * - 可执行：_reasoning 调模型，_acting 执行工具
+ * - 可恢复：loadState / saveState 持久化上下文与断点
+ * - 可验证：ToolResponse.state / ToolResultBlock.state
  */
 export class Agent {
     // Agent configuration
@@ -156,6 +161,7 @@ export class Agent {
         this.name = options.name;
         this._sysPrompt = options.sysPrompt;
         this.model = options.model;
+        // Harness 止损之一：最大轮次（默认 20）。本项目没有 max_budget_usd 成本止损。
         this.maxIters = options.maxIters ?? 20;
         this.context = [];
         this.toolkit = options.toolkit ?? new Toolkit();
@@ -333,7 +339,7 @@ export class Agent {
         awaitingToolCalls: ToolCallBlock[];
         preToolCalls: ToolCallBlock[];
     } {
-        // If there is awaiting tool calls within the last assistant message in the context
+        // 审批分组：连续需要确认的工具调用会一起挂起，返回给宿主一次性处理。
         const pendingToolCalls = this._getPendingToolCalls();
 
         // The tool calls that should be executed before yield the (maybe have) user-confirm or external-execution event
@@ -497,6 +503,8 @@ export class Agent {
             this.context.push(options.msgs);
         }
 
+        // Harness 主循环：推理 → 执行工具 → 回写上下文，直到没有工具调用或触达 maxIters。
+        // 当前没有 doom-loop guard（不检测重复的 tool + input），只靠轮次上限兜底。
         while (this.curIter < this.maxIters) {
             const pendingToolCalls = this._getPendingToolCalls();
             if (pendingToolCalls.length === 0) {
@@ -508,6 +516,7 @@ export class Agent {
             // Extract the awaiting tool calls and those should be executed before yielding human-in-the-loop events
             const { awaitingType, awaitingToolCalls, preToolCalls } = this._getAwaitingToolCalls();
             // Execute the pre-tool calls before yielding the user-confirm or external-execution event if there is any
+            // 注意：这里是串行执行；本项目没有 parallel_tools / max_workers。
             for (const toolCall of preToolCalls) {
                 const actingContent = yield* this._acting({ toolCall });
                 this._saveToContext([actingContent]);
@@ -518,6 +527,7 @@ export class Agent {
             }
 
             // yield the user-confirm or external-execution event if there is any awaiting tool calls
+            // Harness 审批：挂起并等待宿主确认/外部执行，下一次 reply 从断点恢复。
             if (awaitingType) {
                 yield {
                     id: crypto.randomUUID(),
@@ -587,6 +597,7 @@ export class Agent {
     protected async *_reasoning(
         options: ReasoningOptions
     ): AsyncGenerator<AgentEvent, ChatResponse> {
+        // 推理阶段：组装 system prompt + 压缩摘要 + 历史上下文 + 工具 schema，然后调用模型。
         const tools = this.toolkit.getJSONSchemas();
         yield {
             id: crypto.randomUUID(),
@@ -712,6 +723,7 @@ export class Agent {
      * @returns An async generator that yields tool result events.
      */
     protected async *_acting(options: ActingOptions): AsyncGenerator<AgentEvent, ToolResultBlock> {
+        // 行动阶段：执行单个工具，并把流式结果转成 TOOL_RESULT_* 事件。
         const res = this.toolkit.callToolFunction(options.toolCall);
 
         yield {
@@ -991,6 +1003,8 @@ export class Agent {
      */
     protected async compressMemoryIfNeeded() {
         // The tool call and result pair must be kept or removed together
+        // Harness 上下文压缩：超过 token 阈值后生成结构化摘要，并保留最近 N 块。
+        // 切分时保证 tool_call 与 tool_result 成对保留，避免上下文断裂。
         if (!this.compressionConfig || !this.compressionConfig.enabled) return;
 
         const { toCompressedContext, reservedContext } = this._splitContextForCompression();

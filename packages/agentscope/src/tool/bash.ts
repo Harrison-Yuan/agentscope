@@ -101,6 +101,7 @@ While the Bash tool can do similar things, it's better to use the built-in tools
                     shell = process.env.SHELL || '/bin/bash';
                 }
 
+                // 注意：直接 exec，无沙箱、无 cwd、无进程组隔离；仅靠超时和输出上限兜底。
                 const { stdout } = await execAsync(command, {
                     encoding: 'utf-8',
                     timeout: effectiveTimeout,
@@ -111,6 +112,7 @@ While the Bash tool can do similar things, it's better to use the built-in tools
                 // Normalize line endings to LF for cross-platform consistency
                 const normalizedOutput = stdout.replace(/\r\n/g, '\n');
 
+                // 裁剪手段：输出超过 30000 字符直接截断。
                 const maxOutputLength = 30000;
                 if (normalizedOutput.length > maxOutputLength) {
                     return createToolResponse({

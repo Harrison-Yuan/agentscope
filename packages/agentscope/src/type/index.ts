@@ -16,6 +16,7 @@ export enum ReplyFinishedReason {
     ERROR = 'error',
 }
 
+// Harness 错误分类：供上层统一重试/告警/展示；Agent 循环目前尚未接线。
 /** Classification of a fatal error that terminated a reply. */
 export enum ErrorType {
     AUTHENTICATION = 'authentication',

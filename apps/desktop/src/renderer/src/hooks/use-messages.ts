@@ -77,6 +77,7 @@ export function useMessages(sessionId: string | null) {
         await window.api.chat.sendMessage(sessionId, agentKey, message);
     };
 
+    // 审批回传：把用户选择包装成 USER_CONFIRM_RESULT，恢复挂起的 Agent。
     const sendUserConfirm = async (
         toolCall: ToolCallBlock,
         confirm: boolean,

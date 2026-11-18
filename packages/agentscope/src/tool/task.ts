@@ -9,6 +9,7 @@ export type { Task, TaskContext } from '../state';
 export type TaskState = Task['state'];
 
 // Module-level storage
+// 这是 todo 任务列表，不是 Subagent；模块级 Map 只保存任务状态。
 const taskStore = new Map<string, Task>();
 
 /**

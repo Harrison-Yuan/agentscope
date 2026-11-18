@@ -63,6 +63,7 @@ export function getModel(modelConfig: ModelConfig) {
  * @param agentKey - The unique key for the agent instance (used for scheduling tools).
  * @returns A configured Toolkit instance.
  */
+// 桌面端工具装配：内置工具 + 定时任务工具 + 所有可用 MCP 工具。
 export async function getToolkit(sessionId: string, agentKey: string) {
     const skills = skillGetAll().map(skill => skill.dirPath);
 

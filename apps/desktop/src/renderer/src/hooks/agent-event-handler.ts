@@ -8,6 +8,7 @@ import type { Dispatch, SetStateAction } from 'react';
  * @param setMessages
  * @param setSending
  */
+// 事件驱动 UI：把类型化事件重放到消息列表，与模型上下文保持同一份记录。
 export function applyAgentEvent(
     event: AgentEvent,
     setMessages: Dispatch<SetStateAction<Msg[]>>,

@@ -99,6 +99,7 @@ Usage:
 
             const allLines = rawContent.split('\n');
             const startLine = offset !== undefined ? offset - 1 : 0;
+            // 裁剪手段：最多读取 2000 行，单行超过 2000 字符截断。
             const maxLines = 2000;
             const effectiveLimit = limit !== undefined ? Math.min(limit, maxLines) : maxLines;
             const selectedLines = allLines.slice(startLine, startLine + effectiveLimit);

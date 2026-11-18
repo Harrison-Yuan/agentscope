@@ -45,6 +45,7 @@ export class LocalFileStorage extends StorageBase {
      * @param options.agentId - The agent identifier
      * @returns The agent state with context and metadata (internal fields filtered out)
      */
+    // 可恢复：从 context.jsonl + state.json 恢复上下文与断点信息。
     async loadAgentState(options?: { agentId?: string }): Promise<AgentState> {
         const agentDir = path.join(this.saveDir, options?.agentId || '');
 

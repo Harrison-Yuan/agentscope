@@ -6,11 +6,11 @@ import matter from 'gray-matter';
 import { z } from 'zod';
 
 import { createToolResponse, isToolResponse, ToolResponse } from './response';
+import { _jsonLoadsWithRepair } from '../_utils';
 import { HTTPMCPClient, StdioMCPClient } from '../mcp';
 import { ToolCallBlock } from '../message';
 import { ToolInputSchema, ToolSchema } from '../type';
 import { Tool } from './base';
-import { _jsonLoadsWithRepair } from '../_utils';
 
 interface RegisteredTool extends Tool {
     type: 'function' | 'mcp';
@@ -143,6 +143,7 @@ Usage:
      * @yields Incremental ToolResponse objects as they are produced by the tool function
      * @returns The final complete ToolResponse after the tool function execution is finished
      */
+    // 工具执行入口：校验入参 → 调用工具 → 把 string / ToolResponse / Generator 统一收敛成 ToolResponse。
     async *callToolFunction(toolCall: ToolCallBlock): AsyncGenerator<ToolResponse, ToolResponse> {
         // If the tool is registered
         const tool = this.tools.find(tool => tool.name === toolCall.name);
@@ -226,6 +227,7 @@ Usage:
                 yield res as ToolResponse;
                 finalRes = res as ToolResponse;
             } else if (Symbol.asyncIterator in res) {
+                // 流式工具：AsyncGenerator 的每个中间结果都会转成事件，最终结果再写入上下文。
                 // If res is an AsyncGenerator of string or ToolResponse
                 const accContent: ToolResponse['content'] = [];
                 let nextResult = await (res as AsyncGenerator<string | ToolResponse>).next();
@@ -424,6 +426,7 @@ Usage:
      *
      * @returns A string containing the instruction prompt of the available skills and how to use them.
      */
+    // 渐进披露：system prompt 只注入 name/description/location，全文由 Skill 工具按需读取。
     getSkillsPrompt(): string {
         this._skillCache = {};
         if (this.skills.length === 0 && this.skillDirs.length === 0) return '';
@@ -536,6 +539,7 @@ ${skillsXml}
      * @returns The content of the SKILL.md file for the specified skill, or an error message if the skill is not
      * found or the SKILL.md file cannot be read.
      */
+    // Skill 不是函数调用：模型按 description 选中技能后，再用 name 读取 SKILL.md 全文。
     private async _skillTool({ name }: { name: string }): Promise<ToolResponse> {
         if (this._skillCache[name]) {
             // Look up the skill name in the cache to get the corresponding directory path
@@ -599,6 +603,7 @@ ${skillsXml}
      * @param toolName The name of the tool to check for user confirmation requirement.
      * @returns A boolean indicating whether the specified tool requires user confirmation before execution. If the tool is not found, it returns false.
      */
+    // 审批声明：工具层只表达“要不要问”，具体交互（UI/策略/白名单）由宿主实现。
     requireUserConfirm(toolName: string): boolean {
         const tool = this.tools.find(tool => tool.name === toolName);
         return tool ? (tool.requireUserConfirm ?? false) : false;

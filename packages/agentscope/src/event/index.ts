@@ -5,6 +5,7 @@ import { ErrorInfo, ReplyFinishedReason } from '../type';
 export { ErrorType, ReplyFinishedReason } from '../type';
 export type { ErrorInfo } from '../type';
 
+// 带类型的事件流：前端可直接消费，落盘后可回放。
 export enum EventType {
     REPLY_START = 'REPLY_START',
     REPLY_END = 'REPLY_END',
@@ -35,8 +36,10 @@ export enum EventType {
     TOOL_RESULT_DATA_DELTA = 'TOOL_RESULT_DATA_DELTA',
     TOOL_RESULT_END = 'TOOL_RESULT_END',
 
+    // 注意：该事件已定义，但 Agent 循环目前不会发出（只在 schema 层存在）。
     EXCEED_MAX_ITERS = 'EXCEED_MAX_ITERS',
 
+    // 审批事件：挂起 → 宿主确认 → USER_CONFIRM_RESULT 恢复。
     REQUIRE_USER_CONFIRM = 'REQUIRE_USER_CONFIRM',
     REQUIRE_EXTERNAL_EXECUTION = 'REQUIRE_EXTERNAL_EXECUTION',
 

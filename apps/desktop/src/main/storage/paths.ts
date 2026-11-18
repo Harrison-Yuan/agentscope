@@ -1,6 +1,7 @@
 import os from 'os';
 import path from 'path';
 
+// 本地数据根目录；telemetry 目前只有路径占位，没有 OTel 导出。
 export const ROOT_DIR = path.join(os.homedir(), '.agentscope');
 
 export const PATHS = {

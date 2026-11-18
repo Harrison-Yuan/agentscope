@@ -110,6 +110,7 @@ export function registerChatHandlers(ipcMain: IpcMain, webContents: WebContents)
             const toolkit = await getToolkit(sessionId, agentKey);
 
             // Build system prompt
+            // 系统提示词来源：内置 agent 硬编码，自定义 agent 用配置；这里没有 AGENTS.md 加载逻辑。
             let sysPrompt: string;
             if (agentKey === 'friday') {
                 // Friday is the only builtin agent with a fixed system prompt

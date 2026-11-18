@@ -64,6 +64,7 @@ function renderToolInput(name: string, input: string) {
  * @param root0.onUserConfirm - Callback invoked with the user's decision.
  * @returns A confirmation card element.
  */
+// 审批 UI：展示待确认的工具调用，用户选择后回传 USER_CONFIRM_RESULT。
 export function ConfirmCard({
     toolCall,
     onUserConfirm,
